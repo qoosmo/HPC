@@ -8,6 +8,8 @@ use des::Des;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 
+pub mod experiment;
+
 pub const MAX_STATE_BITS: u8 = 28;
 pub const DEFAULT_PLAINTEXT: &[u8] = b"HPC reproducibility fixture";
 
@@ -127,7 +129,7 @@ impl ReducedDesKeySpace {
 fn with_odd_parity(seven_bits: u8) -> u8 {
     let seven_bits = seven_bits & 0x7f;
     let data = seven_bits << 1;
-    let parity = if seven_bits.count_ones() % 2 == 0 {
+    let parity = if seven_bits.count_ones().is_multiple_of(2) {
         1
     } else {
         0
@@ -172,7 +174,7 @@ impl DesOracle {
         let pad_len = block_size - (self.plaintext.len() % block_size);
         let mut output = Vec::with_capacity(self.plaintext.len() + pad_len);
         output.extend_from_slice(&self.plaintext);
-        output.extend(std::iter::repeat(pad_len as u8).take(pad_len));
+        output.extend(std::iter::repeat_n(pad_len as u8, pad_len));
 
         for chunk in output.chunks_exact_mut(block_size) {
             let block = GenericArray::from_mut_slice(chunk);
@@ -631,7 +633,7 @@ mod tests {
     use super::*;
 
     fn decode_hex(text: &str) -> Vec<u8> {
-        assert!(text.len() % 2 == 0);
+        assert!(text.len().is_multiple_of(2));
         (0..text.len())
             .step_by(2)
             .map(|index| u8::from_str_radix(&text[index..index + 2], 16).unwrap())

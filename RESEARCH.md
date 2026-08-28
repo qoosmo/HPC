@@ -52,6 +52,7 @@ Can Java and Rust reproduce identical state encodings, ciphertexts, reductions, 
 - 30-trial Java benchmark and exact coverage results;
 - initial Rust reference implementation;
 - shared Java/Rust reference vectors.
+- deterministic Rust experiment harness and measured 16-bit run;
 
 ## Evidence policy
 

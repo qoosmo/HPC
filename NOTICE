@@ -1,0 +1,28 @@
+Representation and Time-Memory Tradeoffs in Symmetric Cryptography
+Copyright 2026 Ali Mkhida, Algorizk Labs
+
+LICENSING BOUNDARY
+
+The modern software, tests, build scripts, CI configuration, verification
+utilities, and modern reproducibility code authored as part of the repository
+modernization are offered under either the MIT License or Apache License 2.0,
+at your option.
+
+The software-license grant does NOT relicense the following historical or
+scholarly material:
+
+  - docs/original-presentation.pdf
+  - docs/original-README.md
+  - legacy/original-eclipse-prototype/**
+  - research-note/**
+
+The preserved historical project was developed by Abdourahmane Sakho,
+Ali Mkhida, and Maad El Yadari. Historical credit and existing rights are
+retained regardless of the licensing of newly written modernization code.
+
+Generated experiment CSV files and environment metadata are published as
+reproducibility evidence for this research repository. They should be cited
+with the repository and the relevant commit when used in comparative work.
+
+The names "Algorizk" and "Algorizk Labs" are identifiers of the research
+maintainer and are not granted as trademarks by the software licenses.

@@ -1,0 +1,47 @@
+name: Correctness or implementation bug
+description: Report a reproducible defect in Java, Rust, verification, or experiment tooling
+title: "[bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: "Please provide a minimal reproducible case."
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Java reference
+        - Rust reference
+        - Experiment harness
+        - Historical-math verifier
+        - Paper/research note
+        - CI/reproducibility
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened, and what evidence supports that expectation?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Commands, parameters, seed, input, test vector, or mathematical counterexample.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Java/JDK, Rust toolchain, commit SHA, and relevant versions.
