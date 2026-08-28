@@ -8,7 +8,7 @@
 | Current measured Hellman coverage is ≈16.8% | Measured | committed Java/Rust result files | Result |
 | Random-function theory predicts ≈16.6514% | Literature + computed | Ma–Hong recurrence | Result comparison |
 | Reduced-DES map follows random-function coverage across parameter grid | Open | needs sweeps | Potential contribution |
-| Java and Rust are semantically identical for shared plans | Partially verified | existing shared vectors; full plans pending | Must complete before final |
+| Java and Rust are semantically identical for the committed b=16 shared plan | Verified | byte-identical 30-trial semantic CSV outputs | Result / implementation evidence |
 | Java is faster/slower than Rust | Not established | current trial generators differ | Do not claim |
 | DP truncation/collision behavior matches established theory | Open | needs theory + sweeps | Potential contribution |
 | Finite-field/AES representation work belongs in this paper | No | separate research direction | Remove except historical note if needed |

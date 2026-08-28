@@ -1,4 +1,88 @@
 \section{Reference Implementations}
+\label{sec:implementation}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+The artifact contains two independently written implementations of the finite
+state model in Section~\ref{sec:model}. Their purpose is not merely to provide
+two programming-language front ends. Agreement between independent
+implementations is used as evidence that the observed table statistics follow
+from the specified TMTO semantics rather than accidental behavior of one code
+base.
+
+\subsection{Java 17 reference}
+
+The Java implementation uses the standard Java cryptography interface for
+\texttt{DES/ECB/PKCS5Padding}. The reduced-state layer constructs the
+eight-byte DES key explicitly, inserts odd parity in every byte, and varies
+only the effective data bits defined in Section~\ref{sec:model}.
+
+The core components are \texttt{ReducedDesKeySpace}, \texttt{DesOracle},
+\texttt{LegacyReduction}, \texttt{HellmanTable},
+\texttt{DistinguishedPointTable}, and \texttt{CoverageAnalyzer}. Endpoint
+collisions are retained, and online lookup always verifies the full target
+ciphertext.
+
+\subsection{Rust reference}
+
+The Rust crate implements the same semantics independently. It uses the
+RustCrypto \texttt{des} crate for the DES block primitive and explicitly
+performs PKCS\#5-compatible padding before ECB-style block encryption. State
+encoding, parity, reduction, Hellman construction, distinguished-point
+construction, candidate regeneration, and exact coverage are separately
+implemented in Rust.
+
+The independence matters because equality requires agreement on byte order,
+padding, parity, reduction bit positions, coverage conventions, truncated DP
+rows, endpoint collisions, and candidate verification.
+
+\subsection{Literal shared experiment plan}
+
+Small committed vectors already compare state encoding, key bytes, ciphertexts,
+and reductions. For table-level equivalence we use the stronger workload
+\[
+  \texttt{experiments/plans/paper-b16-shared/}.
+\]
+It contains literal CSV files specifying every target, every Hellman start,
+every distinguished-point start, and all common parameters.
+
+The canonical workload uses
+\[
+  b=16,\quad N=65536,\quad
+  m_H=1024,\quad t_H=64,
+\]
+and
+\[
+  m_D=1024,\quad d=6,\quad L=256
+\]
+over 30 trials.
+
+The literal plan removes a confounder present in the first benchmark runs. The
+Java harness generated trials with \texttt{SplittableRandom}, while the first
+Rust harness used SplitMix64. Both runs were deterministic, but they were not
+identical workloads. The committed CSV files now define the workload; neither
+language's PRNG participates in the equivalence experiment.
+
+\subsection{Algorithmic equivalence output}
+
+For every trial both runners emit deterministic fields: target state and
+ciphertext, exact Hellman coverage, distinct endpoints, recovery state,
+endpoint matches and regenerated candidates, as well as exact DP coverage,
+stored/truncated rows, endpoint counts, recovery state, endpoint candidates,
+candidate rows, and projection steps.
+
+No timing field is included. The Java and Rust semantic CSV files are required
+to be byte-for-byte identical before a cross-language timing experiment is
+admitted into the paper.
+
+\subsection{Separation of correctness and timing}
+
+The experimental order is
+\[
+  \text{semantic equivalence}
+  \longrightarrow
+  \text{identical workload}
+  \longrightarrow
+  \text{performance comparison}.
+\]
+Exact coverage is also computed outside timed preprocessing and lookup paths.
+The current section treats deterministic Java/Rust equality as correctness
+evidence; performance is considered only after that gate.

@@ -1,0 +1,10 @@
+key,value
+state_bits,16
+state_space_size,65536
+trials,30
+seed_provenance,20260828
+hellman_chains,1024
+hellman_chain_length,64
+dp_chains,1024
+dp_difficulty_bits,6
+dp_max_chain_length,256

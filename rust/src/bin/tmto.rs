@@ -1,6 +1,7 @@
 use cryptanalytic_time_memory_tradeoffs::experiment::{
     run_experiment, write_run, ExperimentConfig,
 };
+use cryptanalytic_time_memory_tradeoffs::shared_plan::run_shared_plan;
 use cryptanalytic_time_memory_tradeoffs::{
     distinguished_coverage_states, hellman_coverage_states, DesOracle, DistinguishedPointPredicate,
     DistinguishedPointTable, HellmanTable, LegacyReduction, ReducedDesKeySpace,
@@ -22,8 +23,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         "smoke" => smoke(),
         "verified-small" => verified_small(),
         "experiment" => experiment(&args[1..]),
+        "shared-plan" => shared_plan(&args[1..]),
         other => Err(format!(
-            "unknown command: {other}; supported: smoke, verified-small, experiment"
+            "unknown command: {other}; supported: smoke, verified-small, experiment, shared-plan"
         )
         .into()),
     }
@@ -133,4 +135,14 @@ fn experiment(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     println!("ROWS {}", run.results.len());
     println!("COVERAGE_ROWS {}", run.coverage.len());
     Ok(())
+}
+
+fn shared_plan(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
+    if args.len() != 2 {
+        return Err("usage: tmto shared-plan <plan-directory> <output.csv>".into());
+    }
+    run_shared_plan(
+        std::path::Path::new(&args[0]),
+        std::path::Path::new(&args[1]),
+    )
 }
