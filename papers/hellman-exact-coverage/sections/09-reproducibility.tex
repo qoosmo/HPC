@@ -1,0 +1,56 @@
+\section{Reproducibility}
+\label{sec:reproducibility}
+
+The complete artifact is maintained at
+\[
+\texttt{https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs}.
+\]
+The paper source is under
+\[
+\texttt{papers/hellman-exact-coverage/}.
+\]
+A release tag identifying the submitted ePrint snapshot is created only after
+the final PDF and metadata checks; that tag is the preferred long-term
+reproduction anchor.
+
+\subsection{Committed evidence}
+
+The repository contains:
+\begin{itemize}
+  \item the Java 17 implementation and tests;
+  \item the independent Rust implementation and tests;
+  \item the literal Java/Rust shared experiment plan;
+  \item byte-identical Java/Rust semantic result files;
+  \item the 840-row Hellman DES/random-map sweep;
+  \item the 540-row bounded distinguished-point sweep;
+  \item the exact whole-state distinguished-point reachability analysis;
+  \item environment metadata for the generated experiment files;
+  \item Python scripts that transform raw CSV files into paper tables and
+        result macros.
+\end{itemize}
+
+Generated LaTeX tables are committed, but they are not primary evidence: each
+is reproducible from a raw result file and analysis script.
+
+\subsection{Correctness gates}
+
+Before the paper experiments are accepted, the artifact runs the Java unit
+suite, Rust tests, Rust formatting, and Clippy with warnings denied. The
+shared-plan gate additionally requires the Java and Rust result CSV files to be
+byte-for-byte identical. Exact coverage diagnostics are kept outside timed
+paths.
+
+\subsection{Evidence pipeline}
+
+The analysis pipeline is
+\[
+\begin{aligned}
+  &\text{committed source + parameters}\\
+  &\quad\longrightarrow\text{raw experiment CSV}\\
+  &\quad\longrightarrow\text{analysis scripts}\\
+  &\quad\longrightarrow\text{generated tables/macros}\\
+  &\quad\longrightarrow\text{PDF}.
+\end{aligned}
+\]
+No numerical value in the results section needs to be copied manually into the
+manuscript.

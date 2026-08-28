@@ -1,0 +1,11 @@
+experiment=paper-hellman-sweep
+date_utc=2026-08-28T09:50:05Z
+commit=d35824bbca8340c22a59a4455bd64365b7b92b1c
+branch=paper/eprint-hellman-exact-coverage-2026-08-28
+uname=Darwin Alis-MacBook-Pro-2.local 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:17:12 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T8103 arm64
+rustc=rustc 1.96.0-nightly (55e86c996 2026-04-02)
+cargo=cargo 1.96.0-nightly (888f67534 2026-03-30)
+trials=30
+base_seed=20260828
+maps=des,random
+state_bits=12,14,16,18

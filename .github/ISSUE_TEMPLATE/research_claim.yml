@@ -1,0 +1,40 @@
+name: Research claim or experiment proposal
+description: Propose a mathematical claim, falsification, experiment, or reproducibility improvement
+title: "[research] "
+labels: []
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - Mathematical claim
+        - Counterexample / falsification
+        - Experiment proposal
+        - Reproducibility improvement
+        - Java/Rust equivalence
+        - Finite-field / AES representation
+        - TMTO / functional-graph analysis
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Precise research question
+      description: State the claim or question in falsifiable form.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Current evidence
+      description: Paper reference, derivation, committed output, code path, or counterexample.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criterion
+      description: What result would establish, refute, or materially advance this question?
+    validations:
+      required: true

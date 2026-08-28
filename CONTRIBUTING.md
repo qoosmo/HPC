@@ -1,36 +1,63 @@
 # Contributing
 
-Contributions are welcome when they preserve the repository's evidence discipline.
+Contributions are welcome when they preserve the repository's evidence discipline, historical provenance, and reproducibility guarantees.
 
-## Before changing an algorithm
+## Workflow
 
-- add or update tests;
-- preserve the explicit reduced-state semantics;
-- do not mix historical results with newly measured results;
-- keep Java/Rust equivalence fixtures synchronized when shared semantics change.
+1. Create a focused branch.
+2. Keep historical artifacts untouched unless the change is explicitly archival.
+3. Add tests/evidence before changing an algorithmic or mathematical claim.
+4. Run the relevant quality gates.
+5. Open a pull request using the repository template.
+6. Do not merge a performance claim until output and environment metadata are committed.
 
-## Before adding a paper claim
+## Full check
 
-Classify it as historical, verified, measured, conjectural, or future work. A numerical result must point to a committed experiment or verification path.
+```bash
+./scripts/check-all.sh
+```
 
 ## Java
 
 ```bash
-mvn test
+mvn -B -ntp verify
 ```
+
+Changes to state encoding, DES parity, reduction, table construction, or lookup require regression tests.
 
 ## Rust
 
 ```bash
-cargo test --manifest-path rust/Cargo.toml
+cargo fmt --manifest-path rust/Cargo.toml --all -- --check
+cargo clippy --locked --manifest-path rust/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path rust/Cargo.toml
+cargo build --release --locked --manifest-path rust/Cargo.toml --bin tmto
 ```
 
-## Historical finite-field verification
+If shared Java/Rust semantics change, update `test-vectors/` and require both suites to pass.
 
-```bash
-python3 scripts/verify-historical-math.py
-```
+## Paper claims
+
+Classify every new claim as historical reconstruction, mathematically proved,
+computationally verified, measured, conjectural, or future work.
+
+Numerical claims must point to committed parameters, output, and environment
+metadata. Direct Java/Rust performance comparisons require identical experiment
+inputs.
 
 ## Historical assets
 
-Do not modify `docs/original-presentation.pdf` or the preserved Eclipse prototype as part of modernization work.
+Normal modernization work must not modify:
+
+- `docs/original-presentation.pdf`;
+- `legacy/original-eclipse-prototype/`.
+
+The presentation hash is enforced in CI.
+
+## Licensing
+
+Modern contributions intended for the dual-licensed software portion are
+submitted under **MIT OR Apache-2.0**, subject to the boundary in `NOTICE`.
+
+Do not copy third-party or historical material into the dual-licensed tree
+unless rights and attribution are clear.

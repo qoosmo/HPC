@@ -1,0 +1,5 @@
+trials=30
+hellman_exact_recovery=4/30
+hellman_median_coverage=0.168251037598
+dp_exact_recovery=3/30
+dp_median_coverage=0.154121398926
