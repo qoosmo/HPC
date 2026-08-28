@@ -1,3 +1,4 @@
+
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
@@ -7,8 +8,8 @@
 
 \title{Representation and Time--Memory Tradeoffs in Symmetric Cryptography:\\
 Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments}
-\author{Ali Mkhida\\Algorizk Labs}
-\date{Working research note, 2026}
+\author{Ali Mkhida\\Algorizk Labs\\[2pt]\small Current draft maintainer\\\small Originating from an M2P SCCI master's research project at Ensimag--UJF\\\small developed with Abdourahmane Sakho and Maad El Yadari}
+\date{Working ePrint draft --- 28 August 2026}
 
 \newcommand{\F}{\mathbb{F}}
 \newcommand{\GF}{\mathbb{F}}
@@ -22,7 +23,7 @@ Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments}
 \maketitle
 
 \begin{abstract}
-This note upgrades a historical coursework project on high-performance
+This note upgrades a historical master's research project on high-performance
 cryptography into a reproducible research artifact.  The original presentation
 combined finite-field representation changes for AES-like arithmetic with
 practical secret-key recovery experiments based on exhaustive search, Hellman
@@ -30,10 +31,11 @@ time--memory tradeoffs, and distinguished points.  The repository now preserves
 the original presentation as a historical PDF, while this note gives a separate
 ePrint-style reconstruction.
 
-The first part of the note records the representation mathematics: polynomial
-and normal bases of $\GF(2^n)$, basis-change maps, field isomorphisms,
-composite-field inversion, the role of the parameter $\delta$, and the
-non-LUT view of the AES S-box.  The second part gives a modern reproducible
+The first part reconstructs the representation mathematics directly from the
+preserved slides: the concrete $\GF(16)$ normal basis, its exact bilinear
+multiplication formula, the squaring permutation, the displayed 8-by-8
+isomorphism matrices, and the two-level composite-field non-LUT inversion
+proposal.  The second part gives a modern reproducible
 implementation of the cryptanalytic experiments over deliberately reduced DES
 state spaces.  The main empirical observation is that, for the tested
 single-map Hellman construction with $mt/N=1$, the median exact table coverage
@@ -45,7 +47,7 @@ chain states are not independent samples but iterates of one fixed map.
 \section{Historical artifact and updated goal}
 
 The original project was titled \emph{High Performance Computing for
-Cryptography}.  That title correctly described the course context, but it does
+Cryptography}.  That title correctly described the original research context, but it does
 not reveal the mathematical object studied by the modernized repository.  The
 updated repository is organized around two related themes:
 
@@ -54,12 +56,22 @@ updated repository is organized around two related themes:
   \item cryptanalytic time--memory tradeoffs for reduced key spaces.
 \end{enumerate}
 
-The historical presentation remains preserved unchanged as
-\texttt{docs/original-presentation.pdf}.  This document is separate: it is the
-research-note version, intended to evolve toward an ePrint-style manuscript.
+The historical presentation remains preserved unchanged in the repository at
+\[
+  \texttt{docs/original-presentation.pdf}.
+\]
+This document is separate: it is the research-note version, intended to evolve
+toward an ePrint-style manuscript.
 Where the original slides were visual and compressed, this note makes the
 algebraic objects explicit and separates historical claims from newly
 reproduced measurements.
+
+The reconstruction below is based directly on slides 4--19 of the preserved
+presentation~\cite{historical}.  Slides 20 and 21 contain only the phrase ``PROOF ON BOARD'' for,
+respectively, secret-key recovery and the claimed 200~MHz AES throughput.
+Consequently, this note does not reconstruct or endorse a proof or a
+200~MHz implementation result from those two slides; such claims require
+independent source material or a new implementation.
 
 \section{Finite fields in characteristic two}
 
@@ -98,180 +110,372 @@ acts as a cyclic shift on coordinates:
 This is the central reason normal bases are attractive in hardware:
 squaring can be implemented by rewiring rather than by a general multiplier.
 
-\section{Basis-change maps}
+
+\section{The historical \texorpdfstring{$\GF(16)$}{GF(16)} model}
+
+The historical presentation does not work only at the abstract
+$\GF(2^n)$ level.  It fixes the concrete quartic field
+\[
+  K_4
+  =
+  \GF(2)[X]/(X^4+X^3+X^2+X+1)
+\]
+and lets $\alpha$ denote the residue class of $X$.  The slides first use the
+ordered polynomial (``canonical'') basis
+\[
+  \mathcal B_{\mathrm{can}}
+  =
+  (\alpha^3,\alpha^2,\alpha,1).
+\]
+Because
+\[
+  \alpha^4+\alpha^3+\alpha^2+\alpha+1=0,
+\]
+we have $\alpha^5=1$ and $\alpha\neq 1$.
+
+The presentation then uses the ordered normal basis
+\[
+  \mathcal B_{\mathrm{nor}}
+  =
+  (\alpha^8,\alpha^4,\alpha^2,\alpha).
+\]
+The displayed identities are
+\[
+  1_{K_4}=\alpha^8+\alpha^4+\alpha^2+\alpha,
+\]
+together with
+\[
+  \alpha^3=\alpha^8,\qquad
+  \alpha^5=\alpha^{10}
+    =\alpha^8+\alpha^4+\alpha^2+\alpha,
+\]
+\[
+  \alpha^6=\alpha^{16}=\alpha,\qquad
+  \alpha^9=\alpha^4,\qquad
+  \alpha^{12}=\alpha^2.
+\]
+These are consistent with $\alpha^5=1$.  In particular, Frobenius squaring
+cycles the basis elements
+\[
+  \alpha^8\mapsto\alpha,\qquad
+  \alpha^4\mapsto\alpha^8,\qquad
+  \alpha^2\mapsto\alpha^4,\qquad
+  \alpha\mapsto\alpha^2.
+\]
+
+For coordinate vectors
+\[
+  x=[a_3,a_2,a_1,a_0]_{\mathcal B_{\mathrm{nor}}},
+  \qquad
+  y=[b_3,b_2,b_1,b_0]_{\mathcal B_{\mathrm{nor}}},
+\]
+this means
+\[
+  x=a_3\alpha^8+a_2\alpha^4+a_1\alpha^2+a_0\alpha,
+\]
+and similarly for $y$.
+
+\subsection{Exact multiplication formula from the slides}
+
+Slide~7 expands the product in the normal basis.  Defining the common term
+\[
+  q
+  =
+  a_0b_2\oplus a_2b_0\oplus a_1b_3\oplus a_3b_1,
+\]
+the four output coordinates can be written compactly as
+\begin{align*}
+  c_3 &=
+  a_0b_1\oplus a_1b_0\oplus a_2b_2\oplus q,\\
+  c_2 &=
+  a_0b_3\oplus a_3b_0\oplus a_1b_1\oplus q,\\
+  c_1 &=
+  a_2b_3\oplus a_3b_2\oplus a_0b_0\oplus q,\\
+  c_0 &=
+  a_1b_2\oplus a_2b_1\oplus a_3b_3\oplus q.
+\end{align*}
+Thus
+\[
+  xy
+  =
+  c_3\alpha^8+c_2\alpha^4+c_1\alpha^2+c_0\alpha.
+\]
+The repeated term $q$ is precisely the common subexpression highlighted in the
+historical slide.  Sharing it is a direct logic optimization: the same XOR
+subnetwork feeds all four output coordinates.
+
+The repository now includes a small verifier that exhaustively checks this
+formula on all $16^2$ input pairs against multiplication modulo
+$X^4+X^3+X^2+X+1$.
+
+\subsection{Squaring is a coordinate permutation}
+
+Setting $y=x$ in the displayed multiplication formula, or simply applying the
+Frobenius map, gives the historical slide-8 identity
+\[
+  x^2
+  =
+  a_2\alpha^8+a_1\alpha^4+a_0\alpha^2+a_3\alpha.
+\]
+Hence
+\[
+  [a_3,a_2,a_1,a_0]
+  \longmapsto
+  [a_2,a_1,a_0,a_3].
+\]
+No field multiplier is required for this operation in the chosen normal basis:
+squaring is a cyclic coordinate permutation.  This is the precise content of
+the slide's statement that squaring ``comes for free in hardware.''  The same
+normal-basis principle underlies inversion algorithms such as
+Itoh--Tsujii~\cite{itoh1988}.
+
+\section{The tower-field isomorphism used for the S-box}
+
+AES represents a byte as an element of
+\[
+  K_8
+  =
+  \GF(2)[T]/(T^8+T^4+T^3+T+1),
+\]
+the standard AES field~\cite{fips197}.  The historical presentation writes the
+S-box schematically as
+\[
+  S(t)=A_s t^{-1}+B_s,
+\]
+where the subscript here only disambiguates the affine-map constants from the
+quadratic-extension coefficients used below.
+
+The central proposal in slide~5 is to choose a field isomorphism
+\[
+  \delta:
+  K_8
+  \longrightarrow
+  K_4[Y]/(Y^2+A_qY+B_q)
+\]
+and perform the multiplicative inversion in the quadratic extension of
+$K_4$:
+\[
+  t
+  \xrightarrow{\delta}
+  a_1Y+a_0
+  \xrightarrow{\mathrm{inverse}}
+  b_1Y+b_0
+  \xrightarrow{\delta^{-1}}
+  t^{-1}.
+\]
+This is the exact representation-level decomposition shown in the
+presentation.  It is closely related to the composite-field AES S-box
+architectures studied by Satoh et al.~\cite{satoh2001} and
+Canright~\cite{canright2005}.
+
+\subsection{Quadratic-extension inversion}
 
 Let
 \[
-  P=(1,\alpha,\ldots,\alpha^{n-1})
-\]
-be the polynomial basis and
-\[
-  N=(\beta,\beta^2,\ldots,\beta^{2^{n-1}})
-\]
-be a normal basis.  Each normal basis vector can be expanded in the polynomial
-basis:
-\[
-  \beta^{2^j}=\sum_{i=0}^{n-1} B_{ij}\alpha^i,
-  \qquad B_{ij}\in\GF(2).
-\]
-The matrix $B=(B_{ij})$ maps normal-basis coordinates to polynomial-basis
-coordinates:
-\[
-  [a]_P = B [a]_N.
-\]
-If $B$ is invertible, the inverse map is
-\[
-  [a]_N = B^{-1}[a]_P.
-\]
-
-This is the abstract form of the ``canonical basis to normal basis'' part of
-the original presentation.  In a hardware implementation, these matrices are
-binary linear maps.  They can be implemented as XOR networks.  Their cost is
-therefore measured by XOR count, depth, fanout, and routing, rather than by
-field multipliers.
-
-\subsection{Multiplication tensors}
-
-A basis determines how multiplication is implemented.  If
-$e_0,\ldots,e_{n-1}$ is a basis, define structure constants
-$c_{ij}^{k}\in\GF(2)$ by
-\[
-  e_i e_j = \sum_{k=0}^{n-1} c_{ij}^{k}e_k .
-\]
-For
-\[
-  a=\sum_i a_i e_i,
+  z=a_1Y+a_0,
   \qquad
-  b=\sum_j b_j e_j,
+  Y^2+A_qY+B_q=0.
 \]
-the product coordinates are
+The conjugate root of $Y$ is $Y+A_q$, so
 \[
-  (ab)_k=\sum_{i,j} a_i b_j c_{ij}^{k}.
+  \bar z
+  =
+  a_1Y+(a_0+A_q a_1).
 \]
-In polynomial basis, reduction modulo $p(X)$ gives these constants.  In a
-normal basis, squaring is cheap, but multiplication may require a nontrivial
-bilinear network.  Representation engineering is therefore a tradeoff: choose
-a basis that makes the dominant operation cheap, and pay only controlled
-basis-conversion cost where necessary.
-
-\section{Field isomorphisms}
-
-Suppose two degree-$n$ representations are given:
+Its norm down to $K_4$ is
 \[
-  A=\GF(2)[X]/(f(X)),
-  \qquad
-  B=\GF(2)[Y]/(g(Y)).
+  N(z)
+  =
+  z\bar z
+  =
+  a_0^2+A_q a_0a_1+B_q a_1^2.
 \]
-Let $\bar X$ be the image of $X$ in $A$.  A field isomorphism
-$\psi:A\to B$ is determined by the image of $\bar X$.  If
-$\theta\in B$ satisfies
-\[
-  f(\theta)=0,
-\]
-then there is a unique homomorphism
-\[
-  \psi(h(\bar X))=h(\theta).
-\]
-Because both fields have $2^n$ elements, a nonzero homomorphism is an
-isomorphism.
-
-Thus, finding an isomorphism is reduced to finding a root of the defining
-polynomial of one representation inside the other representation.  Once
-$\theta$ is known, the basis-change matrix is obtained from
-\[
-  1,\theta,\theta^2,\ldots,\theta^{n-1}
-\]
-written in the target basis.
-
-This is the mathematical content behind the ``finding isomorphisms'' portion
-of the historical slides.  It is also the bridge between an implementation
-written in the AES polynomial basis and one using normal or composite bases.
-
-\section{AES field arithmetic and non-LUT S-box computation}
-
-AES represents bytes as elements of
-\[
-  \GF(2)[X]/(m(X)),
-  \qquad
-  m(X)=X^8+X^4+X^3+X+1.
-\]
-The AES S-box maps a byte $a$ to
-\[
-  S(a)=A(a^{-1})+c,
-\]
-where $0^{-1}$ is defined as $0$, $A$ is a fixed affine map over $\GF(2)$, and
-$c$ is a fixed byte constant.
-
-A table implementation stores $S(a)$ for all $256$ inputs.  A non-LUT
-implementation instead computes:
-
-\[
-  a
-  \xrightarrow{\text{basis change}}
-  \tilde a
-  \xrightarrow{\text{field inversion}}
-  \tilde a^{-1}
-  \xrightarrow{\text{basis change}}
-  a^{-1}
-  \xrightarrow{\text{affine map}}
-  S(a).
-\]
-
-The advantage is that the large lookup table is replaced by structured XOR
-and small-field arithmetic.  This is useful in hardware contexts where table
-memory, side-channel behavior, or datapath regularity matter.
-
-\section{Composite fields and the role of \texorpdfstring{$\delta$}{delta}}
-
-A common way to compute inversion in $\GF(2^8)$ is to represent it as a
-quadratic extension of $\GF(2^4)$:
-\[
-  \GF(2^8)\simeq \GF(2^4)[U]/(U^2+U+\delta),
-\]
-where $\delta\in\GF(2^4)$ is chosen so that $U^2+U+\delta$ is irreducible.
-Every element has the form
-\[
-  z=a+bU,
-  \qquad a,b\in\GF(2^4).
-\]
-Because $U^2+U+\delta=0$, the conjugate of $U$ over $\GF(2^4)$ is $U+1$.
-Therefore the conjugate of $z$ is
-\[
-  \bar z = a+b(U+1) = (a+b)+bU.
-\]
-The norm is
-\[
-  N(z)=z\bar z
-      =(a+bU)(a+b(U+1))
-      =a^2+ab+\delta b^2.
-\]
-Hence, for $z\ne 0$,
+For $z\neq 0$,
 \[
   z^{-1}
   =
-  \frac{\bar z}{N(z)}
-  =
-  \frac{(a+b)+bU}{a^2+ab+\delta b^2}.
+  \frac{a_1Y+(a_0+A_q a_1)}
+       {a_0^2+A_q a_0a_1+B_q a_1^2}.
 \]
-This reduces inversion in $\GF(2^8)$ to:
+The normal basis from the previous section makes both squarings in the
+denominator coordinate permutations.  This explains why the historical
+project first optimized $K_4$ arithmetic and only then returned to the
+8-bit S-box.
 
-\begin{enumerate}
-  \item squaring in $\GF(2^4)$;
-  \item multiplication in $\GF(2^4)$;
-  \item one inversion in $\GF(2^4)$;
-  \item multiplication by the fixed constant $\delta$.
-\end{enumerate}
+\section{Constructing and representing the isomorphism}
 
-The historical presentation's section on speeding up computations involving
-$\delta$ belongs precisely here.  Multiplication by a fixed element is a
-linear map over $\GF(2)$.  If
+The slides describe the isomorphism by matching generators.  Let
+$K_8^\times$ and
 \[
-  L_\delta : x\longmapsto \delta x
+  L^\times
+  =
+  \left(K_4[Y]/(Y^2+A_qY+B_q)\right)^\times
 \]
-is precomputed as a $4\times 4$ binary matrix, then $\delta b^2$ can be
-implemented as a small XOR network after the cheap squaring map in
-$\GF(2^4)$.  In hardware terms, $\delta$ is not a general multiplier in the
-critical path; it is a fixed linear transform.
+be the multiplicative groups.  If $\alpha_8\in K_8^\times$ and
+$\beta\in L^\times$ are roots of the same irreducible degree-8 polynomial
+$P$, define
+\[
+  \delta(\alpha_8)=\beta,
+  \qquad
+  \delta(\alpha_8^i)=\beta^i.
+\]
+Because
+\[
+  |K_8^\times|=2^8-1=255=3\cdot 5\cdot 17,
+\]
+a candidate $g$ is primitive exactly when
+\[
+  g^{255/3}\neq 1,\qquad
+  g^{255/5}\neq 1,\qquad
+  g^{255/17}\neq 1.
+\]
+This is the standard precise generator test corresponding to the abbreviated
+criterion written on slide~11.
+
+The historical slide states the candidate
+\[
+  \beta=[1,0,0,1]\,Y+[0,0,0,0]
+\]
+under its $K_4$ coordinate convention and records
+\[
+  P(\beta)=0,
+  \qquad
+  P(T)=T^8+T^4+T^3+T+1.
+\]
+It then defines a derived map $\delta_2$ by its image of the polynomial
+generator and extends it multiplicatively:
+\[
+  \delta_2(T^i)=\delta_2(T)^i.
+\]
+The target coefficients $A_q,B_q$ are not written on the surviving slides,
+so the root calculation itself cannot be independently reconstructed from the
+PDF alone.  What \emph{is} recoverable exactly is the resulting binary
+linear map.
+
+\subsection{Exact \texorpdfstring{$8\times 8$}{8x8} matrices}
+
+Slide~12 gives the matrix of $\delta_2$ and its inverse under the bit ordering
+used in the presentation:
+\[
+D=
+\left[
+\begin{array}{cccccccc}
+1&0&1&0&0&0&1&0\\
+0&1&1&1&0&0&0&0\\
+1&1&0&1&1&1&0&0\\
+1&0&1&0&1&1&1&0\\
+1&0&1&0&0&1&0&1\\
+1&0&1&0&0&0&0&1\\
+0&1&0&1&1&1&0&1\\
+0&1&0&0&0&0&0&1
+\end{array}
+\right],
+\]
+and
+\[
+D^{-1}=
+\left[
+\begin{array}{cccccccc}
+1&1&0&1&0&1&1&0\\
+1&1&1&1&0&1&0&1\\
+0&0&1&0&0&1&1&0\\
+1&0&0&1&0&0&1&1\\
+1&0&0&1&1&1&0&0\\
+0&0&0&0&1&1&0&0\\
+0&1&1&1&0&0&0&0\\
+1&1&1&1&0&1&0&0
+\end{array}
+\right].
+\]
+The modernization verifier checks over $\GF(2)$ that
+\[
+  DD^{-1}=D^{-1}D=I_8.
+\]
+
+\section{Hardware meaning of the isomorphism matrices}
+
+For an 8-bit coordinate vector $v$, the basis conversion is simply
+\[
+  \delta_2(v)=Dv,
+  \qquad
+  \delta_2^{-1}(v)=D^{-1}v
+  \qquad\text{over }\GF(2).
+\]
+Each output bit is therefore an XOR of selected input bits, and all eight
+output coordinates can be computed in parallel.  This is exactly the point
+made in slides~14--15.
+
+A natural structural cost is the matrix Hamming weight
+\[
+  \operatorname{wt}(M)=
+  |\{(i,j):M_{ij}=1\}|.
+\]
+For the matrices printed in the historical presentation,
+\[
+  \operatorname{wt}(D)=30,
+  \qquad
+  \operatorname{wt}(D^{-1})=32.
+\]
+The slide explicitly suggests searching for an isomorphism with low Hamming
+weight.  In modern terms, one should optimize not only total ones, but also
+shared XOR subexpressions, XOR depth, fanout, and placement/routing delay.
+Canright's later systematic treatment of basis choices and isomorphism
+matrices is directly relevant to this optimization viewpoint~\cite{canright2005}.
+
+\section{A second composite-field layer and the non-LUT proposal}
+
+Slides~17--19 propose a second decomposition to shorten the longest
+combinational path.  The historical notation uses maps $\delta_a$ and
+$\delta_b$ and states the goal of factoring the first isomorphism through a
+smaller field.  To avoid the composition-order ambiguity in the slide
+notation, we write the two operational stages as
+\[
+  \Delta_8:
+  K_8\longrightarrow K_4[Y]/(Y^2+A_qY+B_q)
+\]
+and
+\[
+  \Delta_4:
+  K_4\longrightarrow
+  \GF(4)[Z]/(Z^2+CZ+D_q).
+\]
+Extend $\Delta_4$ coefficientwise to the quadratic extension.  The combined
+representation change is then unambiguously
+\[
+  \Psi=\widehat{\Delta}_4\circ\Delta_8.
+\]
+
+The pipeline corresponding to slide~19 is
+\[
+  t
+  \xrightarrow{\Delta_8}
+  a_1Y+a_0
+  \xrightarrow{\widehat{\Delta}_4}
+  \widetilde a
+  \xrightarrow{\mathrm{inverse}}
+  \widetilde c
+  \xrightarrow{\widehat{\Delta}_4^{-1}}
+  (a_1Y+a_0)^{-1}
+  \xrightarrow{\Delta_8^{-1}}
+  t^{-1}.
+\]
+The key arithmetic observation is that for every nonzero
+$\gamma\in\GF(4)$,
+\[
+  \gamma^3=1
+  \qquad\Longrightarrow\qquad
+  \gamma^{-1}=\gamma^2.
+\]
+Thus inversion in $\GF(4)$ is just squaring on nonzero elements.  In a normal
+basis, that squaring is again a coordinate permutation.  This is the precise
+mathematical interpretation of the historical statement that the smallest
+inversion stage ``comes for free in hardware,'' and it explains the proposed
+non-LUT S-box datapath.
+
+The historical slides do not provide the actual $C,D_q$, the concrete
+$\Delta_4$ matrix, a synthesized critical path, or an implementation report.
+Those are therefore future-work items rather than reconstructed results.
+
 
 \section{From representation arithmetic to cryptanalytic experiments}
 
@@ -284,7 +488,7 @@ candidate keys.  These are linked but distinct:
   \item time--memory tradeoffs change the cost profile of key recovery.
 \end{itemize}
 
-The original coursework connected these views by considering secret-key
+The original master's research project connected these views by considering secret-key
 recovery experiments after the AES arithmetic discussion.  The modern
 repository makes the second part reproducible over deliberately reduced DES
 state spaces.  DES is obsolete and is used here only because it provides a
@@ -335,7 +539,7 @@ targets because it covers the entire reduced state space by definition.
 
 \section{Hellman chains}
 
-A Hellman table is generated by choosing start states
+A Hellman table~\cite{hellman1980} is generated by choosing start states
 \[
   s_1,\ldots,s_m\in X_b
 \]
@@ -389,7 +593,7 @@ the reference value in Eq.~\eqref{eq:occupancy}.
 
 \section{Distinguished points}
 
-A distinguished-point method stores only chains that reach an easily tested
+A distinguished-point method, closely related to the collision-search framework of van Oorschot and Wiener~\cite{vanoorschot1999}, stores only chains that reach an easily tested
 subset $D\subset X_b$.  In the modern implementation,
 \[
   D_d=\{x\in X_b : x\bmod 2^d=0\}.
@@ -421,6 +625,9 @@ The modern implementation changes the historical prototype in several ways:
   \item Distinguished-point chains are bounded and truncated chains are counted.
   \item The implementation records exact state coverage outside the timed path.
   \item All experiments are generated from explicit seeds.
+  \item A separate historical-math verifier checks the slide-7 $\GF(16)$
+        multiplication formula, the slide-8 squaring permutation, and
+        $DD^{-1}=I_8$ for the slide-12 matrices.
 \end{enumerate}
 
 These changes make the code a reference implementation rather than a
@@ -472,11 +679,15 @@ For distinguished points, the expected waiting-time reference is
 transitions.  Across the $30$ tables, the median exact stored-table coverage
 is $15.4\%$, and many starts merge onto the same distinguished endpoint.
 
-\section{Toward a Rust implementation}
+\section{Rust reference implementation and equivalence roadmap}
 
-The Java implementation is intentionally kept as the current reference
-semantics.  The next phase should not be a direct performance rewrite without
-cross-checks.  A Rust implementation should first reproduce:
+The Java implementation remains the current reference semantics.  On
+28 August 2026 we added an initial Rust reference implementation rather than a
+performance rewrite.  The Rust crate reproduces the reduced DES state encoding,
+PKCS\#5-padded DES oracle, legacy reduction, exhaustive search, Hellman chains,
+distinguished-point chains, and exact coverage analysis.  Shared reference
+vectors are consumed by both Java and Rust tests.  Before any cross-language
+performance claim, the Rust implementation must continue to reproduce:
 
 \begin{enumerate}
   \item the same reduced DES state encoding;
@@ -487,23 +698,23 @@ cross-checks.  A Rust implementation should first reproduce:
   \item the same recovery decisions on committed test vectors.
 \end{enumerate}
 
-Only after cross-language equivalence is established should performance work
-begin.  The natural Rust roadmap is:
+Only after cross-language equivalence is established beyond the committed
+reference vectors should performance work begin.  The implementation roadmap is:
 
 \[
+\begin{aligned}
 \text{Java reference}
-\longrightarrow
-\text{test vectors}
-\longrightarrow
-\text{Rust reference}
-\longrightarrow
-\text{equivalence tests}
-\longrightarrow
-\text{parallel and SIMD optimization}.
+&\longrightarrow \text{test vectors}
+ \longrightarrow \text{Rust reference (initial implementation)}\\
+&\longrightarrow \text{equivalence tests}
+ \longrightarrow \text{parallel/SIMD optimization}.
+\end{aligned}
 \]
 
-Potential Rust tools include property-based testing, Criterion-style
-benchmarking, and parallel chain generation.  A future hardware path would
+The committed Rust crate deliberately has no performance claim yet.  Future
+work includes property-based testing, Criterion-style benchmarking, larger
+cross-language equivalence suites, and parallel chain generation.  A future
+hardware path would
 treat encryption and reduction as pipeline kernels, but that is outside the
 current repository.
 
@@ -550,7 +761,7 @@ The most important experimental lesson is that Hellman table size alone does
 not determine coverage.  For the tested fixed reduction, $mt/N=1$ but exact
 coverage is only about $16.8\%$.  The correct model is the functional graph of
 $F(x)=R(\Enc_{K(x)}(P))$, where chain coalescence is structural.  This makes
-the project a useful base for a future Rust implementation and for a broader
+the project a useful base for a verified Rust implementation and for a broader
 study of reductions, table families, and cryptographic datapath
 representations.
 
@@ -587,6 +798,19 @@ A. Satoh, S. Morioka, K. Takano, and S. Munetoh.
 \newblock A compact Rijndael hardware architecture with S-box optimization.
 \newblock In \emph{Advances in Cryptology -- ASIACRYPT 2001}, pages 239--254.
 Springer, 2001.
+
+
+\bibitem{itoh1988}
+T. Itoh and S. Tsujii.
+\newblock A fast algorithm for computing multiplicative inverses in
+$\mathrm{GF}(2^m)$ using normal bases.
+\newblock \emph{Information and Computation}, 78(3):171--177, 1988.
+\newblock DOI: 10.1016/0890-5401(88)90024-7.
+
+\bibitem{historical}
+A. Sakho, A. Mkhida, and M. El Yadari.
+\newblock \emph{High Performance Computing for Cryptography}.
+\newblock M2P SCCI, Ensimag--UJF, historical master's research presentation, undated.
 
 \end{thebibliography}
 

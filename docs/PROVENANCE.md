@@ -1,47 +1,49 @@
 # Provenance
 
-## Original coursework artifact
+## Original research project
 
-The repository originated from an M2P SCCI project at Ensimag–UJF credited in
-the original presentation to:
+This repository originates from an **M2P SCCI master's research project at Ensimag–UJF** developed by:
 
 - Abdourahmane Sakho
 - Ali Mkhida
 - Maad El Yadari
 
-The original assets are preserved as:
+The preserved presentation documents a research project in cryptography covering finite-field representation changes, AES-oriented arithmetic, and practical key-recovery/time-memory-tradeoff experiments.
 
-- `original-presentation.pdf`;
-- `original-README.md`;
-- `../legacy/original-eclipse-prototype/Hpc/`.
+## Preserved historical artifacts
 
-The original Java source is preserved with its historical file encoding and
-Eclipse project metadata rather than silently rewritten in place.
+The canonical historical assets are:
 
-## Modern reproducibility layer
+- `docs/original-presentation.pdf`
+- `docs/original-README.md`
+- `legacy/original-eclipse-prototype/Hpc/`
 
-The modern source tree under `../src/` is a separate Java 17 implementation
-created to make the practical-work algorithms testable and reproducible.
+The presentation is preserved byte-for-byte. Its SHA-256 is:
 
-It introduces:
+```text
+4003194fdfe82e84bcc32876c8d9ba5042d12dc5f14da726a4bd6e3edc2e6bec
+```
 
-- an explicit effective DES state model;
-- deterministic tests;
-- indexed Hellman endpoint lookup;
-- bounded distinguished-point chains;
-- exact candidate verification;
-- seeded experiment generation;
-- exact state-coverage analysis;
-- machine/JDK metadata for curated runs;
+The original Java source is preserved with its historical encoding and Eclipse metadata rather than silently rewritten.
+
+## Modern research layer
+
+The modern repository adds, separately from the historical artifacts:
+
+- a Java 17 reference implementation;
+- corrected effective-bit DES state semantics;
+- deterministic tests and experiments;
+- exact coverage analysis;
+- a slide-by-slide mathematical reconstruction;
+- an ePrint-style research note;
+- a Rust reference implementation;
+- Java/Rust equivalence fixtures;
 - continuous integration.
 
-## Historical claims versus reproduced claims
+## Historical limits
 
-The original presentation contains timing tables and broader hardware/AES
-material. Those claims are preserved for provenance in
-`HISTORICAL_RESULTS.md`.
+Some original slides contain only `PROOF ON BOARD`. Missing board derivations are not reconstructed from imagination and are explicitly treated as unavailable historical material.
 
-`VERIFIED_RESULTS.md` contains only measurements produced by the modern
-implementation and its checked-in experiment scripts.
+## Reuse
 
-No historical throughput claim is treated as a result of the modern Java code.
+No repository-wide open-source license is currently declared because the historical artifacts are coauthored. A future licensing split can license newly written implementation code independently while keeping historical assets under their original rights.

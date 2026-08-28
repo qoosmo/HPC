@@ -1,9 +1,10 @@
-PDF=cryptanalytic-time-memory-tradeoffs.pdf
+PDF=cryptanalytic-time-memory-tradeoffs
 
-all: $(PDF)
+.PHONY: all clean
 
-$(PDF): main.tex
-	latexmk -pdf -interaction=nonstopmode -halt-on-error -jobname=cryptanalytic-time-memory-tradeoffs main.tex
+all:
+	pdflatex -interaction=nonstopmode -halt-on-error -jobname=$(PDF) main.tex
+	pdflatex -interaction=nonstopmode -halt-on-error -jobname=$(PDF) main.tex
 
 clean:
-	latexmk -C -jobname=cryptanalytic-time-memory-tradeoffs main.tex
+	rm -f *.aux *.log *.out *.toc *.fdb_latexmk *.fls *.synctex.gz

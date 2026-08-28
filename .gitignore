@@ -16,3 +16,5 @@ research-note/*.toc
 research-note/*.fdb_latexmk
 research-note/*.fls
 research-note/*.synctex.gz
+rust/target/
+**/.DS_Store

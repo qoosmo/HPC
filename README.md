@@ -1,110 +1,121 @@
-# Cryptanalytic Time-Memory Tradeoffs
+# Representation and Time-Memory Tradeoffs in Symmetric Cryptography
 
 [![CI](https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/actions/workflows/ci.yml/badge.svg)](https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/actions/workflows/ci.yml)
 
-A reproducible study of **exhaustive search**, **Hellman time–memory tradeoffs**, and **distinguished-point chains** over deliberately reduced DES state spaces.
+A reproducible research project in symmetric cryptography combining two themes:
 
-This repository began as an M2P SCCI project at Ensimag–UJF by
-**Abdourahmane Sakho, Ali Mkhida, and Maad El Yadari**. The original Eclipse
-prototype and presentation are preserved under [`legacy/`](legacy/) and
-[`docs/original-presentation.pdf`](docs/original-presentation.pdf). The modern
-Java 17 implementation separates the algorithms from the historical artifact
-and adds tests, deterministic experiments, exact coverage analysis, and CI.
+1. **finite-field representation engineering for AES-like arithmetic** — polynomial and normal bases, tower-field isomorphisms, composite-field inversion, and non-LUT S-box structure;
+2. **cryptanalytic time-memory tradeoffs** — exhaustive search, Hellman chains, distinguished points, exact table coverage, and functional-graph coalescence over deliberately reduced DES state spaces.
 
-> **Scope.** DES is obsolete. The reduced key spaces in this repository exist
-> only to make algorithmic tradeoffs reproducible on ordinary hardware. This is
-> not production cryptographic software and is not a claim about breaking
-> full-size DES or AES.
+The project originated as an **M2P SCCI master's research project at Ensimag–UJF** by **Abdourahmane Sakho, Ali Mkhida, and Maad El Yadari**. The original research presentation and Eclipse prototype are preserved unchanged, while the modern repository adds a paper-oriented reconstruction, reproducible Java and Rust implementations, exact verification, and CI.
 
-## Research note
+> **Scope.** DES is obsolete and is used only as a compact reproducibility fixture. Nothing in this repository claims to break full-size DES or AES, and none of the code should be used as production cryptography.
 
-The updated project is documented as an ePrint-style research note, separate
-from the historical coursework presentation:
+## Paper track
 
-**Representation and Time-Memory Tradeoffs in Symmetric Cryptography: Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments**
+The repository is being developed toward an **IACR ePrint submission**.
 
-- [`research-note/cryptanalytic-time-memory-tradeoffs.pdf`](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
-- [`research-note/main.tex`](research-note/main.tex)
+**Working title**
 
-The note now reconstructs both parts of the historical project:
+> **Representation and Time-Memory Tradeoffs in Symmetric Cryptography: Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments**
 
-- finite-field representation mathematics for AES-like arithmetic: polynomial
-  basis, normal basis, basis-change maps, field isomorphisms, composite-field
-  inversion, the role of the fixed parameter `delta`, and non-LUT S-box
-  computation;
-- reproducible time-memory tradeoff experiments over reduced DES state spaces,
-  formulated through the functional graph
+- [ePrint-style PDF](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
+- [LaTeX source](research-note/main.tex)
+- [historical-math reconstruction map](research-note/HISTORICAL-MATH-SOURCE.md)
+- [research questions and evidence policy](RESEARCH.md)
+- [project roadmap](ROADMAP.md)
+- [authors and provenance](AUTHORS.md)
 
-```math
-F(x)=R(E_{K(x)}(P)).
+The ePrint draft is an evolving research document. The authorship of a future submission will be finalized with the original project collaborators before submission.
+
+## Two PDFs, permanently separated
+
+| Artifact | Role |
+| --- | --- |
+| [`docs/original-presentation.pdf`](docs/original-presentation.pdf) | Original master's research presentation, preserved byte-for-byte with its original logos and layout |
+| [`research-note/cryptanalytic-time-memory-tradeoffs.pdf`](research-note/cryptanalytic-time-memory-tradeoffs.pdf) | Current paper-oriented reconstruction and modern experimental report |
+
+The original presentation is not rewritten or replaced.
+
+Its preserved SHA-256 is:
+
+```text
+4003194fdfe82e84bcc32876c8d9ba5042d12dc5f14da726a4bd6e3edc2e6bec
 ```
 
-The original presentation remains a separate historical PDF with its own
-layout and logos; the research note is the future ePrint candidate.
+## Historical mathematics reconstructed
 
-The original presentation remains a separate historical artifact and is not
-silently rewritten into the research note.
+The paper now reconstructs the recoverable mathematics from the original presentation, including:
 
-## What is implemented
+- the concrete `GF(16) = GF(2)[X]/(X^4 + X^3 + X^2 + X + 1)` model;
+- the normal basis `{α^8, α^4, α^2, α}`;
+- the slide-derived `GF(16)` multiplication formula;
+- Frobenius squaring as a coordinate permutation;
+- the generator-based tower-field isomorphism construction;
+- the exact historical `8×8` binary isomorphism matrix and its inverse;
+- Hamming-weight interpretation of those binary maps as parallel XOR networks;
+- the second `GF(16) -> GF(4)` composite-field layer;
+- the non-LUT identity `γ^{-1} = γ^2` for nonzero `γ ∈ GF(4)`.
 
-The modern code is under
-[`src/main/java/io/github/qoosmo/hpc`](src/main/java/io/github/qoosmo/hpc).
+[`scripts/verify-historical-math.py`](scripts/verify-historical-math.py) independently checks the finite-field formulas and matrix identities.
 
-| Component | Role |
-| --- | --- |
-| `ReducedDesKeySpace` | Explicit effective-bit DES state model with canonical odd parity |
-| `DesOracle` | Deterministic DES encryption oracle over a fixed plaintext |
-| `ExhaustiveSearch` | Baseline search over the entire configured state space |
-| `LegacyReduction` | Reduction inspired by the historical prototype, expressed in effective DES bits |
-| `HellmanTable` | Fixed-length Hellman chains with hashed endpoint lookup and collision-aware regeneration |
-| `DistinguishedPointPredicate` | Configurable distinguished-state predicate |
-| `DistinguishedPointTable` | Bounded distinguished-point chains with truncation and collision accounting |
-| `ExperimentRunner` | Seeded end-to-end timing and recovery experiments |
-| `CoverageAnalyzer` / `ExactCoverageRunner` | Exact unique-state coverage outside the timed benchmark path |
+Slides whose derivations were written only on the board during the original research presentation are explicitly marked as unrecoverable from the preserved PDF; the paper does not invent those missing proofs.
 
-The test suite currently exercises state encoding, DES parity, deterministic
-encryption, exhaustive recovery, Hellman lookup, distinguished-point recovery,
-negative cases, truncation, deterministic experiment generation, and exact
-coverage.
+## Cryptanalytic model
 
-## Reduced DES state model
+For a reduced state `x`, a canonical DES key encoding `K(x)`, fixed plaintext `P`, encryption `E`, and reduction `R`, one chain transition is
 
-The historical prototype varied four raw DES bytes. A DES key is represented
-with eight bytes, but one bit of each byte is a parity bit and does not
-contribute an independent effective key bit.
+```math
+F(x) = R(E_{K(x)}(P)).
+```
 
-The modern implementation therefore works with an explicit state
+The modern state model uses **effective DES key bits**, not raw Java key-representation bytes:
 
-\[
-x \in \{0,\ldots,2^b-1\}, \qquad 1 \le b \le 28,
-\]
+```math
+x \in \{0,\dots,2^b-1\}, \qquad 1 \le b \le 28.
+```
 
-and maps it to four variable groups of seven effective DES bits. This avoids
-calling four raw bytes a clean "32-bit entropy" key space.
+The four variable DES bytes contribute seven effective bits each; odd parity is inserted canonically.
 
-For a fixed plaintext \(P\), one chain transition is
+## Implementations
 
-\[
-x_{i+1}=R(E_{K(x_i)}(P)),
-\]
+### Java 17 reference
 
-where \(K(x_i)\) is the canonical DES key encoding, \(E\) is DES encryption,
-and \(R\) is the reduced-state function.
+The Java implementation under [`src/main/java/io/github/qoosmo/hpc`](src/main/java/io/github/qoosmo/hpc) contains:
 
-See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) for the exact construction.
+- `ReducedDesKeySpace`
+- `DesOracle`
+- `LegacyReduction`
+- `ExhaustiveSearch`
+- `HellmanTable`
+- `DistinguishedPointPredicate`
+- `DistinguishedPointTable`
+- `CoverageAnalyzer`
+- `ExperimentRunner`
+- `ExactCoverageRunner`
 
-## Verified benchmark
+The Java suite remains the reference for the committed benchmark rows.
 
-The curated benchmark uses:
+### Rust reference — added 28 August 2026
 
-- effective state dimension: **16 bits**, \(N=65{,}536\);
-- **30** deterministic seeded trials;
-- Hellman: \(m=1024\) chains, \(t=64\);
-- distinguished points: 1024 starts, difficulty \(d=6\), maximum chain length 256;
-- a separate warm-up run before timing;
-- exact table coverage computed independently of the timed path.
+The Rust crate under [`rust/`](rust/) now implements the same core semantics:
 
-Results from the currently committed run:
+- canonical reduced DES state encoding and odd parity;
+- DES/ECB with PKCS#5-compatible padding over the same plaintext fixture;
+- the historical effective-bit reduction;
+- exhaustive search;
+- fixed-length Hellman chains;
+- bounded distinguished-point chains;
+- exact state-coverage analysis;
+- shared Java/Rust reference vectors.
+
+This first Rust implementation is a **correctness/equivalence layer**, not yet a speed claim.
+
+The shared vectors in [`test-vectors/java-rust-reference.csv`](test-vectors/java-rust-reference.csv) are checked by both languages.
+
+## Verified Java benchmark
+
+The committed benchmark uses `b = 16`, `N = 65,536`, 30 deterministic seeded trials, Hellman `(m,t)=(1024,64)`, and distinguished points with 1024 starts, `d=6`, maximum chain length 256.
 
 | Method | Exact recovery | Median exact coverage | Median offline | Median online |
 | --- | ---: | ---: | ---: | ---: |
@@ -112,123 +123,76 @@ Results from the currently committed run:
 | Hellman | 4/30 | 16.8% | 70.222 ms | 3.399 ms |
 | Distinguished points | 3/30 | 15.4% | 59.311 ms | 1.790 ms |
 
-The low Hellman coverage is itself informative. With \(mt/N=1\), the familiar
+With `mt/N = 1`, the independent-sample occupancy reference is
 
-\[
-1-e^{-mt/N}\approx 63.2\%
-\]
+```math
+1-e^{-mt/N} \approx 63.2\%.
+```
 
-is an **independent-sample occupancy reference**, not the expected coverage of
-these iterated chains. Because every chain repeatedly applies one fixed
-mapping, chains merge. The measured Hellman tables cover only about
-16–17% of the reduced state space in this configuration.
+The measured Hellman coverage is only about 16–17% because the chains are iterates of one fixed map and therefore coalesce. The exact functional graph, not independent sampling, governs the table.
 
-For distinguished points, the median table covers about 15% of the state
-space, and many starts merge onto the same distinguished endpoint.
-
-The full generated analysis is in
-[`docs/VERIFIED_RESULTS.md`](docs/VERIFIED_RESULTS.md). Raw rows and machine/JDK
-metadata are in [`experiments/results/`](experiments/results/).
+See [`docs/VERIFIED_RESULTS.md`](docs/VERIFIED_RESULTS.md).
 
 ## Reproduce
 
-Requirements:
-
-- Java 17 or newer;
-- Maven 3.9+;
-- Python 3 for the Markdown summary script.
-
-Run the complete tests:
+Java:
 
 ```bash
 mvn test
-```
-
-Re-run the curated benchmark and regenerate its summary:
-
-```bash
 ./scripts/run-verified-small.sh
 ```
 
-The benchmark script writes:
+Rust:
 
-```text
-experiments/results/verified-small.csv
-experiments/results/verified-small-coverage.csv
-experiments/results/verified-small-environment.txt
-docs/VERIFIED_RESULTS.md
+```bash
+cargo test --manifest-path rust/Cargo.toml
+cargo run --manifest-path rust/Cargo.toml --bin tmto -- smoke
 ```
 
-Timing values are machine-dependent. Exact coverage and deterministic seeded
-table construction are the more stable algorithmic outputs.
+Historical finite-field reconstruction:
 
-## Historical presentation and project
-
-The preserved historical material includes topics beyond the modern Java
-benchmark, including:
-
-- canonical-basis to normal-basis transformations;
-- finite-field isomorphisms;
-- computations involving \(\delta\);
-- non-LUT implementation ideas;
-- a secret-key recovery section;
-- an AES-throughput presentation section;
-- the DES practical work represented by the Java prototype.
-
-These topics come from the original coursework presentation. The modern Java
-code in this repository **does not implement an AES hardware design**, so the
-historical AES material is not presented as a benchmark result of the current
-implementation.
-
-Historical practical-work timing tables are transcribed separately in
-[`docs/HISTORICAL_RESULTS.md`](docs/HISTORICAL_RESULTS.md). They are not mixed
-with the newly reproduced measurements.
+```bash
+python3 scripts/verify-historical-math.py
+```
 
 ## Repository layout
 
 ```text
 .
-├── research-note/               # updated research note (LaTeX + PDF)
-├── src/                         # modern Java 17 reference implementation/tests
-├── experiments/results/         # curated CSV + environment metadata
-├── scripts/                     # reproducible benchmark/summary commands
+├── README.md
+├── AUTHORS.md
+├── RESEARCH.md
+├── ROADMAP.md
+├── research-note/
+│   ├── main.tex
+│   ├── cryptanalytic-time-memory-tradeoffs.pdf
+│   └── HISTORICAL-MATH-SOURCE.md
+├── src/                         # Java 17 reference
+├── rust/                        # Rust reference implementation
+├── test-vectors/                # Java/Rust equivalence fixtures
+├── experiments/results/         # curated benchmark evidence
+├── scripts/
 ├── docs/
+│   ├── original-presentation.pdf
 │   ├── METHODOLOGY.md
 │   ├── VERIFIED_RESULTS.md
 │   ├── HISTORICAL_RESULTS.md
-│   ├── original-presentation.pdf
-│   └── original-README.md
+│   └── PROVENANCE.md
 └── legacy/
     └── original-eclipse-prototype/
 ```
 
-## Roadmap
+## Research discipline
 
-The Java implementation is the current **reference implementation**. The next
-implementation phase is a Rust port:
+The repository distinguishes:
 
-```text
-Java reference semantics
-        ↓
-deterministic test vectors
-        ↓
-Rust implementation
-        ↓
-cross-language equivalence
-        ↓
-performance comparison
-```
+- **historical reconstruction** — statements directly recoverable from the original research presentation;
+- **modern verification** — identities or semantics checked by committed tests;
+- **reproduced experiments** — measurements generated by committed scripts;
+- **future work** — results that still require implementation or new experiments.
 
-The Rust implementation should reproduce the same state encoding, chain
-transitions, endpoints, exact coverage, and recovery decisions before any
-performance claim is made.
+No benchmark or mathematical result is promoted into the paper without a reproducible source.
 
-## Provenance and reuse
+## License and reuse
 
-The historical presentation and original Eclipse coursework are coauthored.
-The modernized implementation and reproducibility layer were developed later
-from that artifact. See [`docs/PROVENANCE.md`](docs/PROVENANCE.md).
-
-A repository-wide open-source license is intentionally **not declared at this
-stage**, because reuse rights for the coauthored historical material should not
-be inferred from the modernization work.
+A blanket repository license is intentionally not declared yet. The historical presentation and original prototype are coauthored research artifacts, so their reuse rights should not be inferred from the later modernization. Licensing of newly written Java/Rust code can be separated from the historical material after the original collaborators are contacted.

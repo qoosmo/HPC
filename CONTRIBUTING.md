@@ -1,17 +1,36 @@
 # Contributing
 
-This repository is primarily a reproducibility and research artifact.
+Contributions are welcome when they preserve the repository's evidence discipline.
 
-Before proposing a change:
+## Before changing an algorithm
 
-1. keep historical files under `legacy/` and the original presentation
-   unchanged;
-2. do not replace historical claims with modern claims or vice versa;
-3. add tests for algorithmic changes;
-4. run `mvn test`;
-5. run `git diff --check`;
-6. if benchmark methodology changes, regenerate the curated result set and
-   explain why the new measurements are comparable.
+- add or update tests;
+- preserve the explicit reduced-state semantics;
+- do not mix historical results with newly measured results;
+- keep Java/Rust equivalence fixtures synchronized when shared semantics change.
 
-Performance claims should be backed by committed experiment output and recorded
-environment metadata.
+## Before adding a paper claim
+
+Classify it as historical, verified, measured, conjectural, or future work. A numerical result must point to a committed experiment or verification path.
+
+## Java
+
+```bash
+mvn test
+```
+
+## Rust
+
+```bash
+cargo test --manifest-path rust/Cargo.toml
+```
+
+## Historical finite-field verification
+
+```bash
+python3 scripts/verify-historical-math.py
+```
+
+## Historical assets
+
+Do not modify `docs/original-presentation.pdf` or the preserved Eclipse prototype as part of modernization work.

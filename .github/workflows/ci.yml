@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: Checkout
@@ -25,15 +25,27 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Test
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Verify historical finite-field mathematics
+        run: python3 scripts/verify-historical-math.py
+
+      - name: Java tests
         run: mvn -B -ntp test
 
-      - name: Reproducibility smoke test
+      - name: Rust tests
+        run: cargo test --locked --manifest-path rust/Cargo.toml
+
+      - name: Rust smoke test
+        run: cargo run --quiet --locked --manifest-path rust/Cargo.toml --bin tmto -- smoke
+
+      - name: Java reproducibility smoke test
         run: |
           mvn -B -ntp -q exec:java \
             -Dexec.mainClass=io.github.qoosmo.hpc.ExperimentRunner \
-            -Dexec.args="--state-bits 8 --trials 2 --seed 7 --hellman-chains 32 --hellman-chain-length 8 --dp-chains 32 --dp-bits 2 --dp-max-chain 16 --output /tmp/hpc-ci-smoke.csv"
-          test "$(wc -l < /tmp/hpc-ci-smoke.csv | tr -d ' ')" = "7"
+            -Dexec.args="--state-bits 8 --trials 2 --seed 7 --hellman-chains 32 --hellman-chain-length 8 --dp-chains 32 --dp-bits 2 --dp-max-chain 16 --output /tmp/tmto-ci-smoke.csv"
+          test "$(wc -l < /tmp/tmto-ci-smoke.csv | tr -d ' ')" = "7"
 
       - name: Diff hygiene
         run: git diff --check
