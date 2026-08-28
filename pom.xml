@@ -6,10 +6,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.github.qoosmo</groupId>
-  <artifactId>hpc-cryptanalytic-tradeoffs</artifactId>
+  <artifactId>cryptanalytic-time-memory-tradeoffs</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 
-  <name>HPC Cryptanalytic Tradeoffs</name>
+  <name>Cryptanalytic Time-Memory Tradeoffs</name>
   <description>
     Reproducible experiments for exhaustive search, Hellman time-memory
     tradeoffs, and distinguished-point chains over a reduced DES keyspace.

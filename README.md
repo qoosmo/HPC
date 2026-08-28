@@ -1,10 +1,8 @@
-# HPC for Cryptography — Reproducible Time–Memory Tradeoff Experiments
+# Cryptanalytic Time-Memory Tradeoffs
 
-[![CI](https://github.com/qoosmo/HPC/actions/workflows/ci.yml/badge.svg)](https://github.com/qoosmo/HPC/actions/workflows/ci.yml)
+[![CI](https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/actions/workflows/ci.yml/badge.svg)](https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/actions/workflows/ci.yml)
 
-A modernized, reproducible study of **exhaustive search**, **Hellman
-time–memory tradeoffs**, and **distinguished-point chains** over a deliberately
-reduced DES state space.
+A reproducible study of **exhaustive search**, **Hellman time–memory tradeoffs**, and **distinguished-point chains** over deliberately reduced DES state spaces.
 
 This repository began as an M2P SCCI project at Ensimag–UJF by
 **Abdourahmane Sakho, Ali Mkhida, and Maad El Yadari**. The original Eclipse
@@ -17,6 +15,30 @@ and adds tests, deterministic experiments, exact coverage analysis, and CI.
 > only to make algorithmic tradeoffs reproducible on ordinary hardware. This is
 > not production cryptographic software and is not a claim about breaking
 > full-size DES or AES.
+
+## Research note
+
+The updated project is documented as a small research note, separate from the
+historical coursework presentation:
+
+**From Exhaustive Search to Time-Memory Tradeoffs: Reproducible Hellman and
+Distinguished-Point Experiments over Reduced DES Keyspaces**
+
+- [`research-note/cryptanalytic-time-memory-tradeoffs.pdf`](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
+- [`research-note/main.tex`](research-note/main.tex)
+
+The note reformulates the practical work around the functional graph
+
+```math
+F(x)=R(E_{K(x)}(P)),
+```
+
+and uses exact table coverage to explain the gap between independent-sample
+occupancy intuition and the behavior of iterated Hellman/distinguished-point
+chains.
+
+The original presentation remains a separate historical artifact and is not
+silently rewritten into the research note.
 
 ## What is implemented
 
@@ -135,7 +157,7 @@ docs/VERIFIED_RESULTS.md
 Timing values are machine-dependent. Exact coverage and deterministic seeded
 table construction are the more stable algorithmic outputs.
 
-## Historical project
+## Historical presentation and project
 
 The preserved historical material includes topics beyond the modern Java
 benchmark, including:
@@ -161,7 +183,8 @@ with the newly reproduced measurements.
 
 ```text
 .
-├── src/                         # modern Java 17 implementation and tests
+├── research-note/               # updated research note (LaTeX + PDF)
+├── src/                         # modern Java 17 reference implementation/tests
 ├── experiments/results/         # curated CSV + environment metadata
 ├── scripts/                     # reproducible benchmark/summary commands
 ├── docs/
@@ -173,6 +196,27 @@ with the newly reproduced measurements.
 └── legacy/
     └── original-eclipse-prototype/
 ```
+
+## Roadmap
+
+The Java implementation is the current **reference implementation**. The next
+implementation phase is a Rust port:
+
+```text
+Java reference semantics
+        ↓
+deterministic test vectors
+        ↓
+Rust implementation
+        ↓
+cross-language equivalence
+        ↓
+performance comparison
+```
+
+The Rust implementation should reproduce the same state encoding, chain
+transitions, endpoints, exact coverage, and recovery decisions before any
+performance claim is made.
 
 ## Provenance and reuse
 
