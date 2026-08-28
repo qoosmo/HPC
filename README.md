@@ -18,24 +18,29 @@ and adds tests, deterministic experiments, exact coverage analysis, and CI.
 
 ## Research note
 
-The updated project is documented as a small research note, separate from the
-historical coursework presentation:
+The updated project is documented as an ePrint-style research note, separate
+from the historical coursework presentation:
 
-**From Exhaustive Search to Time-Memory Tradeoffs: Reproducible Hellman and
-Distinguished-Point Experiments over Reduced DES Keyspaces**
+**Representation and Time-Memory Tradeoffs in Symmetric Cryptography: Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments**
 
 - [`research-note/cryptanalytic-time-memory-tradeoffs.pdf`](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
 - [`research-note/main.tex`](research-note/main.tex)
 
-The note reformulates the practical work around the functional graph
+The note now reconstructs both parts of the historical project:
+
+- finite-field representation mathematics for AES-like arithmetic: polynomial
+  basis, normal basis, basis-change maps, field isomorphisms, composite-field
+  inversion, the role of the fixed parameter `delta`, and non-LUT S-box
+  computation;
+- reproducible time-memory tradeoff experiments over reduced DES state spaces,
+  formulated through the functional graph
 
 ```math
-F(x)=R(E_{K(x)}(P)),
+F(x)=R(E_{K(x)}(P)).
 ```
 
-and uses exact table coverage to explain the gap between independent-sample
-occupancy intuition and the behavior of iterated Hellman/distinguished-point
-chains.
+The original presentation remains a separate historical PDF with its own
+layout and logos; the research note is the future ePrint candidate.
 
 The original presentation remains a separate historical artifact and is not
 silently rewritten into the research note.

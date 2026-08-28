@@ -7,3 +7,12 @@ target/
 
 # Generated experiment outputs unless explicitly curated
 experiments/results/raw/
+
+# LaTeX build artifacts
+research-note/*.aux
+research-note/*.log
+research-note/*.out
+research-note/*.toc
+research-note/*.fdb_latexmk
+research-note/*.fls
+research-note/*.synctex.gz

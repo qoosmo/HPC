@@ -1,315 +1,592 @@
 \documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage[hidelinks]{hyperref}
 
-\title{From Exhaustive Search to Time--Memory Tradeoffs:\\
-Reproducible Hellman and Distinguished-Point Experiments\\
-over Reduced DES Keyspaces}
-\author{Ali Mkhida\\
-\small Updated research note based on an original M2P SCCI project\\
-\small with Abdourahmane Sakho and Maad El Yadari}
-\date{August 2026}
+\title{Representation and Time--Memory Tradeoffs in Symmetric Cryptography:\\
+Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments}
+\author{Ali Mkhida\\Algorizk Labs}
+\date{Working research note, 2026}
+
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\GF}{\mathbb{F}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\wt}{\operatorname{wt}}
+\newcommand{\Enc}{\operatorname{Enc}}
+\newcommand{\Inv}{\operatorname{Inv}}
+\newcommand{\im}{\operatorname{im}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This note revisits a historical cryptography coursework project and isolates one
-of its algorithmic cores: exhaustive key search and time--memory tradeoffs.
-Instead of treating four raw DES bytes as a nominal 32-bit search space, the
-updated implementation works with explicit reduced state spaces built from the
-effective DES key bits after parity is removed. We define a deterministic
-functional graph
-\[
-F(x)=R(E_{K(x)}(P)),
-\]
-and study exhaustive search, fixed-length Hellman chains, and bounded
-distinguished-point chains as different ways of exploring this graph. The
-modern Java reference implementation adds deterministic tests, indexed endpoint
-lookup, exact candidate verification, seeded experiments, and exact unique-state
-coverage analysis. In a reproducible 16-bit experiment with 30 seeded trials,
-Hellman tables with $m=1024$ and $t=64$ cover a median of 16.8\% of the state
-space, while distinguished-point tables cover 15.4\%. These measurements also
-show why the independent-sample occupancy quantity $1-e^{-mt/N}$ should not be
-interpreted as the expected coverage of iterated chains: coalescence in a fixed
-functional graph is substantial. The Java implementation is intended as a
-reference specification for a later Rust implementation and cross-language
-performance study.
+This note upgrades a historical coursework project on high-performance
+cryptography into a reproducible research artifact.  The original presentation
+combined finite-field representation changes for AES-like arithmetic with
+practical secret-key recovery experiments based on exhaustive search, Hellman
+time--memory tradeoffs, and distinguished points.  The repository now preserves
+the original presentation as a historical PDF, while this note gives a separate
+ePrint-style reconstruction.
+
+The first part of the note records the representation mathematics: polynomial
+and normal bases of $\GF(2^n)$, basis-change maps, field isomorphisms,
+composite-field inversion, the role of the parameter $\delta$, and the
+non-LUT view of the AES S-box.  The second part gives a modern reproducible
+implementation of the cryptanalytic experiments over deliberately reduced DES
+state spaces.  The main empirical observation is that, for the tested
+single-map Hellman construction with $mt/N=1$, the median exact table coverage
+is only about $16.8\%$, far below the independent-sample occupancy reference
+$1-e^{-1}\simeq 63.2\%$.  The gap is explained by functional-graph coalescence:
+chain states are not independent samples but iterates of one fixed map.
 \end{abstract}
 
-\section{Introduction}
+\section{Historical artifact and updated goal}
 
-Exhaustive key search is the simplest baseline for recovering a key from a
-known plaintext--ciphertext pair: test candidate keys until one reproduces the
-observed ciphertext. If the candidate space has size $N$, the online work is
-linear in $N$ in the worst case and approximately $N/2$ trials for a uniformly
-sampled target.
+The original project was titled \emph{High Performance Computing for
+Cryptography}.  That title correctly described the course context, but it does
+not reveal the mathematical object studied by the modernized repository.  The
+updated repository is organized around two related themes:
 
-Time--memory tradeoff methods move part of that work into an offline phase.
-Hellman's classical construction stores only selected chain endpoints rather
-than a full table of all key--ciphertext pairs \cite{hellman1980}. A related
-engineering idea is to terminate variable-length chains at distinguished
-points, which provides a compact representation and is particularly useful in
-parallel collision and cryptanalytic searches \cite{vanoorschot1999}.
+\begin{enumerate}
+  \item finite-field representation changes for efficient AES-like arithmetic;
+  \item cryptanalytic time--memory tradeoffs for reduced key spaces.
+\end{enumerate}
 
-The original project associated with this repository mixed several topics:
-finite-field basis transformations, hardware-oriented AES material, and a
-practical Java implementation of DES key-search experiments. The present note
-does not attempt to reconstruct all of those themes. Instead, it turns the
-practical-work component into a small reproducible study with an explicit state
-model, a functional-graph formulation, verified algorithms, and measured table
-coverage.
+The historical presentation remains preserved unchanged as
+\texttt{docs/original-presentation.pdf}.  This document is separate: it is the
+research-note version, intended to evolve toward an ePrint-style manuscript.
+Where the original slides were visual and compressed, this note makes the
+algebraic objects explicit and separates historical claims from newly
+reproduced measurements.
 
-\section{From a Raw DES Representation to an Explicit State Space}
+\section{Finite fields in characteristic two}
 
-DES keys are represented by eight bytes, but one bit in each byte is a parity
-bit. Consequently, four varying raw bytes do not constitute four independent
-bytes of effective DES key material. The historical prototype varied four raw
-bytes, which makes statements such as ``32 bits of entropy'' ambiguous when
-interpreted as effective DES key bits.
-
-The updated implementation instead chooses an integer state dimension $b$ and
-defines
+Let $n\geq 1$.  The binary extension field $\GF(2^n)$ may be represented as
 \[
-\mathcal{X}_b=\{0,1,\ldots,2^b-1\},\qquad 1\leq b\leq 28.
+  \GF(2^n) \simeq \GF(2)[X]/(p(X)),
 \]
-Each state $x\in\mathcal{X}_b$ is encoded into four groups of seven effective
-DES bits; odd parity is then inserted to obtain a canonical DES key encoding
-$K(x)$. The first four DES bytes are fixed, while the final four bytes carry at
-most $4\cdot 7=28$ effective variable bits.
-
-This distinction between \emph{raw representation bits} and \emph{effective
-state bits} is important for both correctness and reproducibility. All modern
-experiments therefore report $b$ and $N=2^b$ directly.
-
-\section{Functional-Graph Formulation}
-
-Fix a plaintext $P$. Let $E_{K(x)}(P)$ denote DES encryption of $P$ under the
-key encoded from state $x$. The reduction function $R$ maps a ciphertext back
-into the reduced state space by reading the final four ciphertext bytes,
-removing the DES parity-bit position from each byte, assembling the resulting
-28-bit value, and masking to $b$ bits. We then obtain the deterministic map
-\begin{equation}
-F:\mathcal{X}_b\to\mathcal{X}_b,\qquad
-F(x)=R(E_{K(x)}(P)).
-\label{eq:functional-map}
-\end{equation}
-
-Because every state has one outgoing edge, $F$ defines a directed functional
-graph: trees feed into cycles. Hellman and distinguished-point tables can be
-viewed as compact descriptions of trajectories in this graph. This viewpoint
-also makes chain merging unavoidable rather than exceptional: once two chains
-reach the same state, all subsequent states are identical.
-
-\section{Search Strategies}
-
-\subsection{Exhaustive search}
-
-Given a target ciphertext $C^\star$, exhaustive search tests states in the
-configured domain until
+where $p$ is an irreducible polynomial of degree $n$.  If $\alpha$ denotes the
+class of $X$, the \emph{polynomial basis} is
 \[
-E_{K(x)}(P)=C^\star.
+  (1,\alpha,\alpha^2,\ldots,\alpha^{n-1}).
 \]
-It uses negligible precomputed memory, has no offline phase, and provides a
-useful correctness and timing baseline. In the curated experiment the complete
-reduced state space is therefore represented, so its exact coverage is 100\%.
-
-\subsection{Hellman chains}
-
-Choose $m$ distinct start states $s_1,\ldots,s_m$. For a fixed chain length $t$,
-compute
+Every field element is written uniquely as
 \[
-s_i,\ F(s_i),\ F^2(s_i),\ldots,F^t(s_i)
+  a = a_0 + a_1\alpha + \cdots + a_{n-1}\alpha^{n-1},
+  \qquad a_i\in\GF(2).
 \]
-and store the pair consisting of the start state and final endpoint. During
-online lookup, the target is projected toward possible endpoints; matching
-stored endpoints identify candidate chains, which are regenerated and verified
-against the original target ciphertext.
 
-The historical Java prototype repeatedly scanned the endpoint list during
-online lookup. The modern implementation instead indexes endpoints in a hash
-map and retains all starts that collide at the same endpoint. This changes the
-engineering complexity of lookup without changing the underlying chain
-construction.
+A second important representation is a \emph{normal basis}.  An element
+$\beta\in\GF(2^n)$ is normal over $\GF(2)$ if
+\[
+  \mathcal N(\beta)=
+  (\beta,\beta^2,\beta^{2^2},\ldots,\beta^{2^{n-1}})
+\]
+is a basis of $\GF(2^n)$ over $\GF(2)$.  In this representation, the Frobenius
+map
+\[
+  \varphi : x \longmapsto x^2
+\]
+acts as a cyclic shift on coordinates:
+\[
+  \sum_{i=0}^{n-1} b_i \beta^{2^i}
+  \longmapsto
+  \sum_{i=0}^{n-1} b_i \beta^{2^{i+1}}.
+\]
+This is the central reason normal bases are attractive in hardware:
+squaring can be implemented by rewiring rather than by a general multiplier.
 
-If $mt$ states were independent uniform samples from a set of size $N$, their
-occupancy would be approximated by
-\begin{equation}
-1-e^{-mt/N}.
-\label{eq:occupancy}
-\end{equation}
-This quantity is useful only as an independent-sampling reference here. The
-states in a Hellman chain are not independent: they are consecutive iterates of
-one fixed map $F$. Chain coalescence can therefore reduce coverage far below
-\eqref{eq:occupancy}.
+\section{Basis-change maps}
 
-\subsection{Distinguished-point chains}
+Let
+\[
+  P=(1,\alpha,\ldots,\alpha^{n-1})
+\]
+be the polynomial basis and
+\[
+  N=(\beta,\beta^2,\ldots,\beta^{2^{n-1}})
+\]
+be a normal basis.  Each normal basis vector can be expanded in the polynomial
+basis:
+\[
+  \beta^{2^j}=\sum_{i=0}^{n-1} B_{ij}\alpha^i,
+  \qquad B_{ij}\in\GF(2).
+\]
+The matrix $B=(B_{ij})$ maps normal-basis coordinates to polynomial-basis
+coordinates:
+\[
+  [a]_P = B [a]_N.
+\]
+If $B$ is invertible, the inverse map is
+\[
+  [a]_N = B^{-1}[a]_P.
+\]
 
-Let $d$ be a distinguished-point difficulty. In the modern implementation a
-state is distinguished when its lowest $d$ state bits are zero. Under a
-uniform-state heuristic, the waiting time to such a state is approximately
-$2^d$ transitions.
+This is the abstract form of the ``canonical basis to normal basis'' part of
+the original presentation.  In a hardware implementation, these matrices are
+binary linear maps.  They can be implemented as XOR networks.  Their cost is
+therefore measured by XOR count, depth, fanout, and routing, rather than by
+field multipliers.
 
-A chain begins at a sampled start state and is iterated until either a
-distinguished state is reached or a configured maximum chain length is
-exceeded. Only chains that reach a distinguished endpoint are stored. Multiple
-chains may share the same endpoint, so online lookup again regenerates all
-candidate chains and verifies the target ciphertext before returning a state.
+\subsection{Multiplication tensors}
 
-The historical implementation contained a branch that verified one candidate
-key but returned a different state variable. The updated implementation removes
-that ambiguity and includes regression tests that require the returned state to
-be the state actually verified against the target ciphertext.
+A basis determines how multiplication is implemented.  If
+$e_0,\ldots,e_{n-1}$ is a basis, define structure constants
+$c_{ij}^{k}\in\GF(2)$ by
+\[
+  e_i e_j = \sum_{k=0}^{n-1} c_{ij}^{k}e_k .
+\]
+For
+\[
+  a=\sum_i a_i e_i,
+  \qquad
+  b=\sum_j b_j e_j,
+\]
+the product coordinates are
+\[
+  (ab)_k=\sum_{i,j} a_i b_j c_{ij}^{k}.
+\]
+In polynomial basis, reduction modulo $p(X)$ gives these constants.  In a
+normal basis, squaring is cheap, but multiplication may require a nontrivial
+bilinear network.  Representation engineering is therefore a tradeoff: choose
+a basis that makes the dominant operation cheap, and pay only controlled
+basis-conversion cost where necessary.
 
-\section{Reproducible Implementation}
+\section{Field isomorphisms}
 
-The modern Java 17 implementation separates the state model, DES oracle,
-search algorithms, and experiment harness. The main changes relative to the
-historical prototype are:
+Suppose two degree-$n$ representations are given:
+\[
+  A=\GF(2)[X]/(f(X)),
+  \qquad
+  B=\GF(2)[Y]/(g(Y)).
+\]
+Let $\bar X$ be the image of $X$ in $A$.  A field isomorphism
+$\psi:A\to B$ is determined by the image of $\bar X$.  If
+$\theta\in B$ satisfies
+\[
+  f(\theta)=0,
+\]
+then there is a unique homomorphism
+\[
+  \psi(h(\bar X))=h(\theta).
+\]
+Because both fields have $2^n$ elements, a nonzero homomorphism is an
+isomorphism.
+
+Thus, finding an isomorphism is reduced to finding a root of the defining
+polynomial of one representation inside the other representation.  Once
+$\theta$ is known, the basis-change matrix is obtained from
+\[
+  1,\theta,\theta^2,\ldots,\theta^{n-1}
+\]
+written in the target basis.
+
+This is the mathematical content behind the ``finding isomorphisms'' portion
+of the historical slides.  It is also the bridge between an implementation
+written in the AES polynomial basis and one using normal or composite bases.
+
+\section{AES field arithmetic and non-LUT S-box computation}
+
+AES represents bytes as elements of
+\[
+  \GF(2)[X]/(m(X)),
+  \qquad
+  m(X)=X^8+X^4+X^3+X+1.
+\]
+The AES S-box maps a byte $a$ to
+\[
+  S(a)=A(a^{-1})+c,
+\]
+where $0^{-1}$ is defined as $0$, $A$ is a fixed affine map over $\GF(2)$, and
+$c$ is a fixed byte constant.
+
+A table implementation stores $S(a)$ for all $256$ inputs.  A non-LUT
+implementation instead computes:
+
+\[
+  a
+  \xrightarrow{\text{basis change}}
+  \tilde a
+  \xrightarrow{\text{field inversion}}
+  \tilde a^{-1}
+  \xrightarrow{\text{basis change}}
+  a^{-1}
+  \xrightarrow{\text{affine map}}
+  S(a).
+\]
+
+The advantage is that the large lookup table is replaced by structured XOR
+and small-field arithmetic.  This is useful in hardware contexts where table
+memory, side-channel behavior, or datapath regularity matter.
+
+\section{Composite fields and the role of \texorpdfstring{$\delta$}{delta}}
+
+A common way to compute inversion in $\GF(2^8)$ is to represent it as a
+quadratic extension of $\GF(2^4)$:
+\[
+  \GF(2^8)\simeq \GF(2^4)[U]/(U^2+U+\delta),
+\]
+where $\delta\in\GF(2^4)$ is chosen so that $U^2+U+\delta$ is irreducible.
+Every element has the form
+\[
+  z=a+bU,
+  \qquad a,b\in\GF(2^4).
+\]
+Because $U^2+U+\delta=0$, the conjugate of $U$ over $\GF(2^4)$ is $U+1$.
+Therefore the conjugate of $z$ is
+\[
+  \bar z = a+b(U+1) = (a+b)+bU.
+\]
+The norm is
+\[
+  N(z)=z\bar z
+      =(a+bU)(a+b(U+1))
+      =a^2+ab+\delta b^2.
+\]
+Hence, for $z\ne 0$,
+\[
+  z^{-1}
+  =
+  \frac{\bar z}{N(z)}
+  =
+  \frac{(a+b)+bU}{a^2+ab+\delta b^2}.
+\]
+This reduces inversion in $\GF(2^8)$ to:
+
+\begin{enumerate}
+  \item squaring in $\GF(2^4)$;
+  \item multiplication in $\GF(2^4)$;
+  \item one inversion in $\GF(2^4)$;
+  \item multiplication by the fixed constant $\delta$.
+\end{enumerate}
+
+The historical presentation's section on speeding up computations involving
+$\delta$ belongs precisely here.  Multiplication by a fixed element is a
+linear map over $\GF(2)$.  If
+\[
+  L_\delta : x\longmapsto \delta x
+\]
+is precomputed as a $4\times 4$ binary matrix, then $\delta b^2$ can be
+implemented as a small XOR network after the cheap squaring map in
+$\GF(2^4)$.  In hardware terms, $\delta$ is not a general multiplier in the
+critical path; it is a fixed linear transform.
+
+\section{From representation arithmetic to cryptanalytic experiments}
+
+The finite-field part of the project concerns the cost of one encryption
+datapath.  The cryptanalytic part concerns the cost of searching over many
+candidate keys.  These are linked but distinct:
 
 \begin{itemize}
-  \item an explicit effective-bit state model with canonical DES parity;
-  \item deterministic, seedable table generation;
-  \item endpoint hash indexing for Hellman and distinguished-point tables;
-  \item retention of endpoint collisions rather than silently overwriting them;
-  \item exact candidate-chain regeneration and ciphertext verification;
-  \item bounded distinguished-point chains with explicit truncation counts;
-  \item automated tests for state encoding, recovery, negative cases,
-        determinism, truncation, and coverage;
-  \item raw CSV experiment output and recorded runtime environment metadata;
-  \item exact unique-state coverage computed outside the timed benchmark path.
+  \item finite-field basis choices change the cost of encryption rounds;
+  \item time--memory tradeoffs change the cost profile of key recovery.
 \end{itemize}
 
-The last item is especially important. Random-target recovery over a small
-number of trials is noisy, whereas exact coverage directly measures how much of
-the reduced state space is represented by a generated table.
+The original coursework connected these views by considering secret-key
+recovery experiments after the AES arithmetic discussion.  The modern
+repository makes the second part reproducible over deliberately reduced DES
+state spaces.  DES is obsolete and is used here only because it provides a
+small, standard block cipher setting suitable for reproducible experiments.
 
-\paragraph{Coverage and success probability.}
-Let $S\subseteq\mathcal{X}_b$ be the union of states represented by a table and
-assume the lookup procedure recovers a target exactly when the target state lies
-in $S$. If the target $X$ is uniform on $\mathcal{X}_b$, then
+\section{Reduced DES state model}
+
+The historical Java prototype varied four raw DES bytes.  However, a DES key
+is encoded in eight bytes with one parity bit per byte.  Thus four varying raw
+bytes do not automatically give $32$ independent effective DES key bits.
+
+The modern model defines a reduced state space explicitly:
 \[
-\Pr[X\text{ is recovered}]=\frac{|S|}{2^b}.
+  X_b = \{0,1,\ldots,2^b-1\},
+  \qquad 1\le b\le 28.
 \]
-Thus exact coverage is the natural population quantity; finite random-target
-recovery is an empirical check of the implementation and sampling process.
+A state $x\in X_b$ is mapped to a canonical DES key encoding $K(x)$ with odd
+parity.  The first four DES bytes are fixed, and the final four bytes carry
+up to seven effective bits each.  This gives at most $28$ effective variable
+bits.
 
-\section{Verified Experiment}
-
-The curated experiment uses a 16-bit effective state space,
+For a fixed plaintext $P$, the encryption oracle is
 \[
-N=2^{16}=65{,}536,
+  C_x = \Enc_{K(x)}(P).
 \]
-and 30 deterministic seeded trials. A separate warm-up run precedes the timed
-measurements. Timings are end-to-end JVM observations obtained with
-\texttt{System.nanoTime()}; they are not cycle counts or JMH microbenchmarks.
+A reduction function
+\[
+  R:\{0,1\}^\ast\to X_b
+\]
+maps ciphertexts back into reduced states.  The core functional graph is
+\[
+  F(x)=R(\Enc_{K(x)}(P)).
+\]
+Hellman chains and distinguished-point chains are both walks in this directed
+functional graph.
 
-For Hellman tables we use $m=1024$ start states and $t=64$ transitions, so
-$mt/N=1$. Distinguished-point tables use 1024 starts, difficulty $d=6$, and a
-maximum chain length of 256 transitions.
+\section{Exhaustive search}
 
-\begin{table}[ht]
-\centering
-\caption{Curated 16-bit reduced-state experiment. Coverage is computed exactly
-from the generated table chains. Timing values are medians over 30 seeded
-trials and are machine-dependent.}
-\label{tab:results}
-\begin{tabular}{lrrrr}
+Given a target ciphertext $C^\star$, exhaustive search tests every state:
+\[
+  \Enc_{K(x)}(P)\stackrel{?}{=}C^\star.
+\]
+It requires no offline table and no stored endpoints.  Its memory cost is
+constant, but its online cost is $O(2^b)$ encryptions in the worst case.
+
+In the verified experiment with $b=16$, exhaustive search recovers all
+targets because it covers the entire reduced state space by definition.
+
+\section{Hellman chains}
+
+A Hellman table is generated by choosing start states
+\[
+  s_1,\ldots,s_m\in X_b
+\]
+and iterating $F$ for a fixed chain length $t$:
+\[
+  s_i,\ F(s_i),\ F^2(s_i),\ldots,F^t(s_i).
+\]
+Only the pair
+\[
+  (s_i,F^t(s_i))
+\]
+is stored.  The second component is the endpoint.
+
+For a target ciphertext $C^\star$, the online phase computes
+\[
+  R(C^\star),\quad F(R(C^\star)),\quad F^2(R(C^\star)),\ldots
+\]
+and checks whether one of these projected endpoints appears in the table.
+When an endpoint matches, the corresponding stored chain is regenerated from
+its start point and the target ciphertext is verified directly.
+
+The modern implementation stores endpoints in a hash index rather than
+repeatedly scanning every endpoint.  It also retains endpoint collisions and
+regenerates all candidate chains, because different starts may lead to the
+same endpoint.
+
+\subsection{Why the independent occupancy heuristic is optimistic}
+
+If $mt$ states were sampled independently and uniformly from a universe of
+size $N=2^b$, the expected covered fraction would be
+\[
+  1-\left(1-\frac{1}{N}\right)^{mt}
+  \approx 1-e^{-mt/N}.
+  \label{eq:occupancy}
+\]
+But a Hellman table does not draw $mt$ independent samples.  It samples start
+points, then applies the same function $F$ repeatedly.  If two chains meet,
+they coalesce forever:
+\[
+  F^a(s_i)=F^b(s_j)
+  \quad\Longrightarrow\quad
+  F^{a+r}(s_i)=F^{b+r}(s_j)
+  \quad\text{for all } r\ge 0.
+\]
+Thus the functional-graph structure of $F$ can reduce actual coverage far
+below the independent-sampling reference.
+
+This is not a measurement anomaly; it is a structural effect.  It is also why
+exact coverage analysis is included in the repository rather than relying on
+the reference value in Eq.~\eqref{eq:occupancy}.
+
+\section{Distinguished points}
+
+A distinguished-point method stores only chains that reach an easily tested
+subset $D\subset X_b$.  In the modern implementation,
+\[
+  D_d=\{x\in X_b : x\bmod 2^d=0\}.
+\]
+Equivalently, the lowest $d$ state bits are zero.  Under a uniform-state
+heuristic, the expected hitting time is approximately $2^d$ transitions.
+
+A chain starts at $s_i$ and is followed until either:
+
+\begin{enumerate}
+  \item it reaches a distinguished point; or
+  \item it exceeds a maximum chain length.
+\end{enumerate}
+
+Only successful chains are stored.  Chains that do not hit a distinguished
+point before the cutoff are counted as truncated.  During lookup, the target
+is projected forward until it reaches a distinguished point or the bound is
+exceeded.  Candidate chains sharing that endpoint are regenerated and verified
+against the target ciphertext.
+
+\section{Implementation corrections}
+
+The modern implementation changes the historical prototype in several ways:
+
+\begin{enumerate}
+  \item The reduced key space counts effective DES key bits, not raw bytes.
+  \item Endpoints are indexed rather than searched by nested linear scans.
+  \item Candidate chains are always verified against the target ciphertext.
+  \item Distinguished-point chains are bounded and truncated chains are counted.
+  \item The implementation records exact state coverage outside the timed path.
+  \item All experiments are generated from explicit seeds.
+\end{enumerate}
+
+These changes make the code a reference implementation rather than a
+one-off demonstration.  They also separate algorithmic claims from JVM timing
+noise.
+
+\section{Verified experiment}
+
+The committed benchmark uses:
+
+\begin{itemize}
+  \item effective state dimension $b=16$, so $N=65\,536$;
+  \item $30$ deterministic seeded trials;
+  \item Hellman parameters $m=1024$, $t=64$;
+  \item distinguished-point parameters $1024$ starts, $d=6$, and maximum
+        chain length $256$;
+  \item a separate warm-up run before collecting timings;
+  \item exact unique-state table coverage computed outside the timed path.
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{lccc}
 \toprule
-Method & Exact recovery & Median coverage & Offline & Online \\
+Method & Exact recovery & Median exact coverage & Median online time \\
 \midrule
-Exhaustive & 30/30 & 100.0\% & 0.000 ms & 25.863 ms \\
-Hellman & 4/30 & 16.8\% & 70.222 ms & 3.399 ms \\
-Distinguished points & 3/30 & 15.4\% & 59.311 ms & 1.790 ms \\
+Exhaustive & $30/30$ & $100.0\%$ & $25.863$ ms \\
+Hellman & $4/30$ & $16.8\%$ & $3.399$ ms \\
+Distinguished points & $3/30$ & $15.4\%$ & $1.790$ ms \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
 
-For Hellman tables, exact coverage ranges from 16.4\% to 17.4\%, with a median
-of 690.5 distinct endpoints out of 1024 stored chains. The independent-sample
-quantity in \eqref{eq:occupancy} equals
+For Hellman, the parameters satisfy
 \[
-1-e^{-1}\approx 63.2\%,
+  \frac{mt}{N}=\frac{1024\cdot 64}{65\,536}=1.
 \]
-but the measured exact coverage is only 16.8\%. The gap is not evidence of a
-failed benchmark: it exposes how strongly trajectories coalesce when the same
-functional graph is iterated repeatedly.
+The independent-sample occupancy reference would therefore be
+\[
+  1-e^{-1}\simeq 63.2\%.
+\]
+The exact measured median coverage is instead $16.8\%$.  This confirms that
+the fixed-map functional graph is the right mathematical model for these
+tables.
 
-Distinguished-point tables show a similar effect. Their exact coverage ranges
-from 15.1\% to 15.8\%, while the median number of distinct distinguished
-endpoints is only 144.5 out of 1024 starts. Across all 30 trials, 30,619 chains
-are stored and 101 chains are truncated by the maximum-length bound.
+For distinguished points, the expected waiting-time reference is
+\[
+  2^d=64
+\]
+transitions.  Across the $30$ tables, the median exact stored-table coverage
+is $15.4\%$, and many starts merge onto the same distinguished endpoint.
 
-\section{Discussion}
+\section{Toward a Rust implementation}
 
-The experiment illustrates a distinction that can be hidden when a time--memory
-tradeoff is summarized only through $m$, $t$, and $N$. The nominal product $mt$
-does not itself measure represented state-space coverage. The geometry of the
-functional graph matters: trajectories can merge early, after which additional
-steps add no new states relative to another chain.
+The Java implementation is intentionally kept as the current reference
+semantics.  The next phase should not be a direct performance rewrite without
+cross-checks.  A Rust implementation should first reproduce:
 
-This suggests several natural follow-up experiments. Different reduction
-functions can alter the induced functional graph; multiple tables with distinct
-reductions can reduce systematic merging; and parameter sweeps can compare
-memory, preprocessing time, online time, endpoint diversity, and exact coverage
-rather than relying on one nominal tradeoff equation.
-
-The results should not be interpreted as a security estimate for DES. DES is
-obsolete, and the state space here is deliberately small. The value of the
-experiment is methodological: the reduced domain permits complete coverage
-analysis and exact reproducibility while preserving the structure of the
-search algorithms.
-
-\section{Toward a Rust Implementation}
-
-The current Java code should be treated as a reference semantics rather than
-the final performance implementation. The next implementation phase is a Rust
-port with cross-language equivalence tests. For a fixed plaintext, state
-dimension, seed, reduction, and parameter set, Java and Rust should produce the
-same canonical key encodings, chain transitions, endpoints, exact coverage,
-and recovery decisions.
-
-Only after those equivalence tests pass should performance comparisons be made.
-This separates two questions that are otherwise easy to conflate:
 \begin{enumerate}
-  \item does the implementation realize the intended time--memory tradeoff
-        algorithm correctly?;
-  \item how efficiently does a particular language/runtime realize it?
+  \item the same reduced DES state encoding;
+  \item the same key parity convention;
+  \item the same reduction function;
+  \item the same chain endpoints for fixed seeds;
+  \item the same exact coverage results;
+  \item the same recovery decisions on committed test vectors.
 \end{enumerate}
-The Rust phase can then explore allocation control, compact table layouts,
-parallel chain construction, and SIMD-friendly batching without losing the
-reference behavior established here.
+
+Only after cross-language equivalence is established should performance work
+begin.  The natural Rust roadmap is:
+
+\[
+\text{Java reference}
+\longrightarrow
+\text{test vectors}
+\longrightarrow
+\text{Rust reference}
+\longrightarrow
+\text{equivalence tests}
+\longrightarrow
+\text{parallel and SIMD optimization}.
+\]
+
+Potential Rust tools include property-based testing, Criterion-style
+benchmarking, and parallel chain generation.  A future hardware path would
+treat encryption and reduction as pipeline kernels, but that is outside the
+current repository.
+
+\section{Future research directions}
+
+Several directions follow naturally from this update.
+
+\paragraph{Multiple reductions.}
+Classical Hellman tables often use table-dependent reductions.  The current
+implementation uses one fixed reduction.  Introducing indexed reductions
+$R_j$ would reduce chain merging and make the comparison with classical
+tradeoff theory more direct.
+
+\paragraph{Rainbow and multi-table variants.}
+Rainbow tables change the reduction per column.  A reproducible comparison
+between fixed-reduction Hellman tables, multiple Hellman tables, and rainbow
+tables would clarify how much of the measured coverage loss is due to
+functional-graph coalescence.
+
+\paragraph{Parameter optimization.}
+The current benchmark is deliberately small.  A larger study should sweep
+$m$, $t$, distinguished-point difficulty $d$, and chain bounds, reporting
+coverage, online work, false candidates, and memory.
+
+\paragraph{Finite-field arithmetic implementation.}
+The AES finite-field part should be turned into executable code: basis-change
+matrices, composite-field inversion, $\delta$ multiplication, and non-LUT
+S-box circuits.  The code should report XOR count, depth, and test equivalence
+against the AES S-box.
+
+\paragraph{Rust and hardware.}
+Rust should first match Java semantics and only then pursue speed.  Hardware
+work should be based on stable test vectors and should separate AES arithmetic
+optimization from time--memory tradeoff table generation.
 
 \section{Conclusion}
 
-This update turns a historical DES practical exercise into a compact
-reproducible study of cryptanalytic time--memory tradeoffs. The central objects
-are no longer opaque Java byte arrays but an explicit reduced state space and
-the deterministic functional graph induced by encryption and reduction. Exact
-coverage measurements show substantial chain coalescence: at $mt/N=1$, the
-curated Hellman tables cover a median of only 16.8\% of the state space, while
-distinguished-point tables cover 15.4\%. Preserving the original presentation
-and prototype separately from this note makes the historical provenance clear,
-while the modern implementation provides a tested reference point for the
-planned Rust translation.
+The updated repository separates historical provenance from modern
+reproducibility.  The original presentation remains intact, while this note
+reconstructs the finite-field mathematics and connects it to a tested
+time--memory tradeoff implementation.
+
+The most important experimental lesson is that Hellman table size alone does
+not determine coverage.  For the tested fixed reduction, $mt/N=1$ but exact
+coverage is only about $16.8\%$.  The correct model is the functional graph of
+$F(x)=R(\Enc_{K(x)}(P))$, where chain coalescence is structural.  This makes
+the project a useful base for a future Rust implementation and for a broader
+study of reductions, table families, and cryptographic datapath
+representations.
 
 \begin{thebibliography}{9}
 
 \bibitem{hellman1980}
-M. E. Hellman,
-``A cryptanalytic time--memory trade-off,''
-\emph{IEEE Transactions on Information Theory},
-vol. 26, no. 4, pp. 401--406, 1980.
-DOI: \href{https://doi.org/10.1109/TIT.1980.1056220}{10.1109/TIT.1980.1056220}.
+M. E. Hellman.
+\newblock A cryptanalytic time-memory trade-off.
+\newblock \emph{IEEE Transactions on Information Theory}, 26(4):401--406,
+1980.
 
 \bibitem{vanoorschot1999}
-P. C. van Oorschot and M. J. Wiener,
-``Parallel collision search with cryptanalytic applications,''
-\emph{Journal of Cryptology},
-vol. 12, no. 1, pp. 1--28, 1999.
+P. C. van Oorschot and M. J. Wiener.
+\newblock Parallel collision search with cryptanalytic applications.
+\newblock \emph{Journal of Cryptology}, 12:1--28, 1999.
+
+\bibitem{fips197}
+National Institute of Standards and Technology.
+\newblock \emph{Advanced Encryption Standard (AES)}, FIPS 197, updated 2023.
+
+\bibitem{rijndael}
+J. Daemen and V. Rijmen.
+\newblock \emph{The Design of Rijndael: AES -- The Advanced Encryption Standard}.
+\newblock Springer, 2002.
+
+\bibitem{canright2005}
+D. Canright.
+\newblock A very compact S-box for AES.
+\newblock In \emph{Cryptographic Hardware and Embedded Systems -- CHES 2005},
+pages 441--455. Springer, 2005.
+
+\bibitem{satoh2001}
+A. Satoh, S. Morioka, K. Takano, and S. Munetoh.
+\newblock A compact Rijndael hardware architecture with S-box optimization.
+\newblock In \emph{Advances in Cryptology -- ASIACRYPT 2001}, pages 239--254.
+Springer, 2001.
 
 \end{thebibliography}
 
