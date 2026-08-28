@@ -1,0 +1,78 @@
+\section{Introduction}
+
+A time--memory tradeoff (TMTO) moves work from the online phase of a search
+problem into a reusable preprocessing phase.  In Hellman's classical
+construction~\cite{Hellman1980}, a large key or state space is represented by
+iteration chains while only chain endpoints are retained.  The construction
+therefore occupies a middle ground between exhaustive search, which uses little
+memory and large online time, and complete table lookup, which uses large
+memory and very small online time.
+
+The central implementation issue is that a chain table does not contain
+$m t$ independent samples.  Once two iterates of the same mapping meet, their
+future trajectories coincide; a chain can also revisit one of its own previous
+states.  Consequently, the effective coverage of a table is the number of
+\emph{distinct} represented states, not its nominal number of positions.
+This phenomenon is part of the classical TMTO literature rather than a new
+observation: Hellman's analysis, later work on random mappings, success
+probability, perfect tables, false alarms, and rainbow reductions all treat
+different aspects of collisions, merging, and coverage
+~\cite{Hellman1980,FlajoletOdlyzko1990,Oechslin2003,AvoineJunodOechslin2008,MaHong2009,Hong2008}.
+
+The purpose of this paper is therefore narrower and experimentally explicit.
+We ask how accurately established random-function TMTO theory describes a
+\emph{concrete finite cryptographic mapping} when every represented state can
+be enumerated exactly, and whether independent implementations reproduce the
+same semantics and finite-state statistics.
+
+\paragraph{Concrete iteration map.}
+For a reduced state $x$, a canonical DES-key encoding $K(x)$, a fixed plaintext
+$P$, encryption $E$, and reduction $R$, we study
+\[
+    F(x)=R(E_{K(x)}(P)).
+\]
+DES is obsolete and is used only as a compact deterministic fixture.  The state
+dimension is deliberately reduced so that exact coverage, cycles, endpoint
+multiplicities, and recovery behavior can be computed rather than estimated
+from sampling.
+
+\paragraph{A motivating discrepancy and its correct baseline.}
+The repository's initial $N=2^{16}$ experiment used $m=1024$ fixed-length
+chains of length $t=64$, so $mt=N$.  Treating the $mt$ chain positions as
+independent samples would give the occupancy expression
+\[
+    1-e^{-mt/N}=1-e^{-1}\approx 63.2\%.
+\]
+That number is \emph{not} the expected coverage of a Hellman matrix.  Using the
+random-function recurrence of Ma and Hong~\cite{MaHong2009}, the same
+parameters predict approximately $16.651\%$ coverage of the state space.  The
+measured median exact coverage is approximately $16.8\%$.  Thus the initial
+measurement is in close agreement with established random-function theory.
+
+This distinction also exposes an important parameterization point.  The
+standard Hellman matrix-stopping regime is expressed in terms of $m t^2$
+relative to $N$, not merely $mt/N$.  Our initial configuration satisfies
+$mt=N$ but $m t^2=64N$; it should therefore be treated as a finite-state stress
+point, not as a standard matrix-stopping configuration.
+
+\paragraph{Contributions and scope.}
+This paper is an experimental and reproducibility study, not a claim to have
+discovered chain coalescence or classical TMTO coverage theory.  Its intended
+contributions are:
+\begin{enumerate}
+  \item a precise, executable reduced-DES state model with canonical DES parity
+        handling and an explicit reduction;
+  \item exact coverage and exact-recovery instrumentation for Hellman and
+        bounded distinguished-point tables;
+  \item direct comparison of concrete cryptographic mappings with established
+        random-function coverage predictions over controlled finite-state
+        parameter sweeps;
+  \item independent Java and Rust reference implementations, with shared
+        semantic fixtures and, before any timing comparison, a common committed
+        experiment plan;
+  \item a reproducibility artifact in which numerical claims are generated from
+        committed inputs, outputs, scripts, and environment metadata.
+\end{enumerate}
+
+We make no claim to break full-size DES or AES, and no implementation in this
+repository is intended for production cryptography.

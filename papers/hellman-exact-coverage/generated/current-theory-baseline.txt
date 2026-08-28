@@ -1,0 +1,8 @@
+N=65536
+m=1024
+t=64
+mt_over_N=1.000000000000
+mt2_over_N=64.000000000000
+expected_fraction_of_N=0.166514303028
+ECR_fraction_of_mt=0.166514303028
+expected_distinct_states=10912.681363

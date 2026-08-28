@@ -1,0 +1,46 @@
+\section{Related Work}
+
+\paragraph{Classical time--memory tradeoffs.}
+Hellman introduced the cryptanalytic time--memory tradeoff for block-cipher key
+recovery and analyzed the effect of chain collisions under random-function
+assumptions~\cite{Hellman1980}.  Fiat and Naor later gave rigorous time/space
+tradeoffs for function inversion beyond the random-function setting
+~\cite{FiatNaor1991}.  Barkan, Biham, and Shamir developed a general model of
+cryptanalytic TMTOs based on stateful random graphs and proved rigorous bounds
+covering classical and rainbow-style constructions~\cite{BarkanBihamShamir2006}.
+Recent work continues to revisit the fundamental limits of preprocessing and
+function inversion~\cite{GolovnevEtAl2023}.
+
+\paragraph{Random mappings and coverage.}
+Iteration chains naturally induce functional graphs.  Flajolet and Odlyzko
+systematically analyzed random-mapping statistics including cycles,
+components, and related structural parameters~\cite{FlajoletOdlyzko1990}.
+For Hellman tables specifically, Ma and Hong studied the expected coverage
+rate and supplied a recurrence that closely matches experiments under a random
+function model~\cite{MaHong2009}.  Their framework is a central baseline for
+the present paper: our goal is not to replace it, but to test it against exact
+coverage of a concrete finite cryptographic mapping.
+
+\paragraph{Rainbow and perfect tables.}
+Oechslin's rainbow construction changes the reduction across chain positions,
+reducing the conditions under which collisions turn into permanent chain
+merges~\cite{Oechslin2003}.  Avoine, Junod, and Oechslin analyzed perfect
+classic, distinguished-point, and rainbow tables, including practical
+performance considerations~\cite{AvoineJunodOechslin2008}.  These works make
+clear that coverage, preprocessing cost, and lookup cost must be compared at
+matched success probabilities rather than through nominal table sizes alone.
+
+\paragraph{False alarms and distinguished points.}
+Endpoint matches do not always imply successful recovery: false alarms can
+force regeneration of candidate chains and materially affect the online cost.
+Hong analyzed this cost for Hellman and rainbow tradeoffs~\cite{Hong2008}.
+Lee and Hong compared major perfect-table variants and developed detailed
+analysis for distinguished-point constructions~\cite{LeeHong2012}.
+
+\paragraph{Position of this work.}
+The present paper focuses on reproducibility at finite state sizes where the
+entire mapping and table coverage can be enumerated.  This permits a direct
+three-way comparison among established random-function predictions, a concrete
+DES-derived mapping, and independent Java/Rust implementations.  The value of
+the study is therefore in exact instrumentation, controlled comparisons, and
+reproducible validation---not in reintroducing known TMTO phenomena.

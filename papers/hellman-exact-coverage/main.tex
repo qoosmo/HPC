@@ -1,0 +1,42 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\title{Exact Finite-State Coverage of Hellman and Distinguished-Point\\
+Time--Memory Tradeoffs:\\
+A Reproducible Study on Reduced-DES Mappings}
+
+% AUTHORSHIP GATE:
+% Finalize before ePrint submission. Do not add historical collaborators as
+% coauthors without consent; do not erase historical contribution.
+\author{Ali Mkhida\\Algorizk Labs}
+\date{28 August 2026}
+
+\newcommand{\Nspace}{N}
+\newcommand{\Fmap}{F}
+\newcommand{\Enc}{\operatorname{Enc}}
+\newcommand{\Cov}{\operatorname{Cov}}
+
+\begin{document}
+\maketitle
+
+\input{sections/00-abstract}
+\input{sections/01-introduction}
+\input{sections/02-related-work}
+\input{sections/03-model}
+\input{sections/04-theory}
+\input{sections/05-implementation}
+\input{sections/06-experiments}
+\input{sections/07-results}
+\input{sections/08-discussion}
+\input{sections/09-reproducibility}
+\input{sections/10-conclusion}
+
+\bibliographystyle{alpha}
+\bibliography{references}
+
+\end{document}

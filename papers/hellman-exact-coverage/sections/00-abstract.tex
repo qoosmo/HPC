@@ -1,0 +1,23 @@
+\begin{abstract}
+Cryptanalytic time--memory tradeoffs replace repeated exhaustive search by
+precomputed chains of an iteration function.  Their success depends not on the
+nominal number of generated chain positions, but on the number of distinct
+states actually represented after self-intersections and chain merging.
+
+We present a reproducible finite-state study of Hellman and bounded
+distinguished-point tables for a concrete family of reduced-DES iteration maps.
+The artifact computes exact state-space coverage and exact key recovery, and
+provides independent Java and Rust implementations with shared semantic test
+vectors.  In the current $N=2^{16}$ configuration with $m=1024$ Hellman chains
+of length $t=64$, the measured median exact coverage is approximately
+$16.8\%$.  Applying the established random-function coverage recurrence of
+Ma and Hong predicts approximately $16.651\%$ coverage for the same
+parameters, showing that the observed loss is consistent with classical
+random-mapping theory rather than with the independent-sampling heuristic
+$1-e^{-mt/N}$.
+
+The final version of this report extends this comparison across parameter
+sweeps, random-function baselines, distinguished-point stopping parameters,
+and a shared Java/Rust experiment plan.  All numerical claims are tied to
+committed inputs, outputs, and environment metadata.
+\end{abstract}
