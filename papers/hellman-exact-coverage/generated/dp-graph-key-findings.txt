@@ -1,0 +1,9 @@
+d4_des_eventual_floor=0.000305175781
+d4_random_median_eventual_floor=0.001899719238
+d4_des_max_finite_hit=98
+d6_des_eventual_floor=0.003143310547
+d6_random_median_eventual_floor=0.033447265625
+d6_des_max_finite_hit=218
+d8_des_eventual_floor=0.297149658203
+d8_random_median_eventual_floor=0.332733154297
+d8_des_max_finite_hit=314

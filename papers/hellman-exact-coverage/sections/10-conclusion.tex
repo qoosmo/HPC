@@ -1,4 +1,25 @@
 \section{Conclusion}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+We built a reproducible finite-state laboratory for classical cryptanalytic
+time--memory tradeoffs and used it to separate independent occupancy,
+fixed-map Hellman coverage, and distinguished-point stopping on a finite
+functional graph.
+
+For Hellman tables, the initially surprising $16.8\%$ coverage at $mt=N$ is
+not anomalous. The established Ma--Hong random-function recurrence predicts
+about \StressMH{}, and exact measurements on the DES-derived map closely track
+both that prediction and matched random-map controls across the tested grid.
+At fixed $mt$, chain shape still matters because longer iterates create more
+permanent coalescence.
+
+For distinguished points, the fresh-sample geometric truncation model
+describes only the short-chain reference. Exact reverse reachability over all
+$2^{16}$ states shows a nonzero eventual truncation floor whenever some
+trajectories cannot reach the distinguished set. This directly explains the
+large-$L$ plateaus observed in the bounded-chain experiments.
+
+Finally, independent Java and Rust implementations produce byte-identical
+deterministic outputs on a shared 30-trial workload. The main contribution is
+therefore not a new generic TMTO construction, but an executable bridge between
+established theory, complete finite functional graphs, concrete cryptographic
+mappings, and independently reproducible implementations.

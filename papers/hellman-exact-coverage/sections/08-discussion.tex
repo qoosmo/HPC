@@ -1,4 +1,78 @@
 \section{Discussion and Limitations}
+\label{sec:discussion}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+\subsection{What the Hellman experiment says}
+
+The Hellman sweep began from an apparent discrepancy: at the configuration
+$mt=N$, an independent-occupancy heuristic suggests about $63.2\%$ coverage,
+while the original experiment measured only about $16.8\%$. Once the correct
+fixed-map baseline is used, the discrepancy disappears. The Ma--Hong
+recurrence predicts \StressMH{}, and both the DES-derived mapping and matched
+random maps are close to that value.
+
+This is a useful negative result. It prevents an implementation artifact or an
+inappropriate iid approximation from being promoted into a cryptanalytic
+claim. Within the state dimensions tested here, we find no stable Hellman
+coverage anomaly that distinguishes the DES-derived mapping from the random
+controls.
+
+\subsection{What the distinguished-point experiment adds}
+
+Distinguished points expose a different finite-functional-graph effect. The
+fresh-sample model predicts an exponentially decreasing truncation probability
+$(1-2^{-d})^L$. For a fixed mapping, however, a trajectory eventually enters a
+cycle. If the relevant eventual cycle does not contain a distinguished state,
+increasing $L$ beyond the transient and cycle lengths cannot make the chain
+terminate.
+
+The exact reverse-reachability computation quantifies this phenomenon over all
+$2^{16}$ starts. In particular, the large-$L$ truncation plateau observed for
+$d=8$ is not a timing artifact or a failure of the DP implementation: it is a
+property of the complete functional graph. The classical DP literature already
+treats bounded chains and cycle removal as practical concerns
+~\cite{StandaertEtAl2002,AvoineJunodOechslin2008}; our contribution here is
+the exact executable finite-state accounting for the concrete map and matched
+random controls.
+
+\subsection{Why reduced DES is useful here}
+
+DES is obsolete and the experiments do not attempt to recover a full DES key.
+The reduced model is useful precisely because exact enumeration is possible.
+For $b\leq18$ we can construct the entire iteration map, measure exact Hellman
+coverage, and compare with complete random mappings. At $b=16$ we can also
+compute exact reverse reachability for every distinguished-point predicate.
+
+The resulting object is best viewed as a finite cryptanalytic laboratory: the
+primitive supplies a concrete deterministic mapping, while the reduced
+dimension makes functional-graph quantities observable without statistical
+estimation.
+
+\subsection{Limitations}
+
+Several limitations delimit the claims. First, the DES-derived mapping depends
+on one fixed plaintext, one key embedding, and one reduction. Different
+plaintexts or reductions induce different functional graphs. Second, the
+Hellman study stops at $b=18$ and the exact distinguished-point graph analysis
+is performed at $b=16$; no asymptotic statement about larger DES subspaces
+follows automatically. Third, the random controls are deterministic
+SplitMix64-generated mappings used for reproducibility. They are experimental
+stand-ins for uniformly sampled functions, not cryptographic random oracles.
+
+Fourth, the bootstrap intervals in Section~\ref{sec:results} are descriptive
+summaries of the chosen 30 paired trials. We do not present them as a formal
+proof of equivalence between the DES-derived map and the random-function
+distribution. Fifth, the Java/Rust result establishes semantic equality on a
+shared workload, not equality of all possible implementations or providers.
+
+Finally, no Java-versus-Rust speedup claim appears in this version. Although
+both languages contain timing harnesses, the scientific contribution of this
+paper is exact finite-state behavior and reproducibility. A performance study
+requires a separately controlled benchmarking design.
+
+\subsection{Implications for TMTO experimentation}
+
+The experiments suggest three practical rules for reproducible TMTO studies:
+use the coverage model appropriate to iterated fixed functions rather than iid
+occupancy; separate exact semantic validation from performance measurement;
+and, for distinguished points, distinguish short-chain geometric behavior from
+the eventual reachability structure of the functional graph.

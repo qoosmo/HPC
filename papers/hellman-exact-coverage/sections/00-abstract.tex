@@ -1,23 +1,27 @@
 \begin{abstract}
-Cryptanalytic time--memory tradeoffs replace repeated exhaustive search by
-precomputed chains of an iteration function.  Their success depends not on the
-nominal number of generated chain positions, but on the number of distinct
-states actually represented after self-intersections and chain merging.
+Cryptanalytic time--memory tradeoffs represent a search space by iterating a
+fixed mapping and storing selected chain endpoints. Their effective coverage is
+therefore governed by functional-graph coalescence rather than by independent
+occupancy.
 
-We present a reproducible finite-state study of Hellman and bounded
-distinguished-point tables for a concrete family of reduced-DES iteration maps.
-The artifact computes exact state-space coverage and exact key recovery, and
-provides independent Java and Rust implementations with shared semantic test
-vectors.  In the current $N=2^{16}$ configuration with $m=1024$ Hellman chains
-of length $t=64$, the measured median exact coverage is approximately
-$16.8\%$.  Applying the established random-function coverage recurrence of
-Ma and Hong predicts approximately $16.651\%$ coverage for the same
-parameters, showing that the observed loss is consistent with classical
-random-mapping theory rather than with the independent-sampling heuristic
-$1-e^{-mt/N}$.
+We present an exact finite-state, reproducible study of Hellman and bounded
+distinguished-point tables for reduced mappings derived from DES. The artifact
+contains independent Java and Rust implementations, a literal shared 30-trial
+workload, complete finite-map enumeration, and matched random-mapping controls.
+The Java and Rust deterministic outputs are byte-for-byte identical.
 
-The final version of this report extends this comparison across parameter
-sweeps, random-function baselines, distinguished-point stopping parameters,
-and a shared Java/Rust experiment plan.  All numerical claims are tied to
-committed inputs, outputs, and environment metadata.
+For the motivating $N=2^{16}$ Hellman configuration with $m=1024$ and $t=64$,
+the established Ma--Hong random-function recurrence predicts \StressMH{}
+coverage. The measured medians are \StressDES{} for the DES-derived mapping
+and \StressRandom{} for matched random mappings, showing that the earlier
+independent-occupancy reference $1-e^{-1}$ is not the appropriate Hellman
+baseline. Parameter sweeps likewise show close agreement between the concrete
+mapping, random-map controls, and fixed-map coverage theory.
+
+For distinguished points, exact reverse reachability over all $2^{16}$ states
+explains why truncation need not vanish as the chain bound grows: trajectories
+whose eventual functional-graph components avoid the distinguished set can
+never terminate at a distinguished point. The experiments thus connect
+classical TMTO theory with exact finite functional graphs and a fully
+reproducible cryptographic implementation artifact.
 \end{abstract}

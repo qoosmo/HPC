@@ -1,5 +1,3 @@
-\input{generated/result-macros.tex}
-
 \section{Results}
 \label{sec:results}
 
@@ -96,6 +94,41 @@ The geometric expression is only a fresh-sample reference. Fixed finite
 mappings can merge trajectories or enter cycles without a distinguished
 vertex, so the matched random-map controls provide the more relevant
 finite-functional-graph comparison.
+
+\subsection{Exact explanation of the DP truncation plateau}
+
+The bounded-start experiment samples only 1024 starts per trial. Because
+$N=65536$ is still enumerable, we can remove this sampling layer and compute
+the stopping behavior for \emph{every} possible start state.
+
+For a fixed map and distinguished set $D$, reverse reachability from $D$
+classifies each vertex according to whether its forward trajectory can ever
+reach a distinguished state. Since our chain convention tests $F(s)$ after the
+first transition, the eventual truncation floor is the fraction of starts $s$
+for which $F(s)$ lies outside the reverse-reachable set.
+
+\begin{table}[ht]
+\centering
+\small
+\input{generated/dp-graph-results.tex}
+\caption{Exact whole-state distinguished-point truncation for the DES-derived
+map and medians over 30 complete random mappings. The DES eventual floor is the
+fraction of starts that can never reach a distinguished point after the first
+transition, irrespective of the chain bound.}
+\label{tab:dp-graph-results}
+\end{table}
+
+This computation explains the apparent long-bound plateau in
+Table~\ref{tab:dp-main-results}. For $d=8$, for example, the DES-derived map
+has an exact eventual truncation floor of \DPGraphDESFloorDEight{}, compared with
+a median \DPGraphRandomFloorDEight{} over the 30 random mappings. Increasing $L$
+cannot recover starts whose trajectories enter components whose eventual cycle
+contains no distinguished state.
+
+The same effect is smaller for $d=4$ and $d=6$: the exact DES floors are
+\DPGraphDESFloorDFour{} and \DPGraphDESFloorDSix{}, respectively. Thus the
+fresh-sample geometric model is a useful short-chain reference, while the
+whole functional graph determines the nonzero large-$L$ limit.
 
 \subsection{What the experiments establish}
 
