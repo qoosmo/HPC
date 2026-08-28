@@ -11,9 +11,38 @@
 
   <name>Cryptanalytic Time-Memory Tradeoffs</name>
   <description>
-    Reproducible experiments for exhaustive search, Hellman time-memory
-    tradeoffs, and distinguished-point chains over a reduced DES keyspace.
+    Java reference implementation for reproducible exhaustive-search, Hellman,
+    distinguished-point, and exact-coverage research over reduced DES states.
   </description>
+  <url>https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/blob/main/LICENSE-MIT</url>
+      <distribution>repo</distribution>
+    </license>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/blob/main/LICENSE-APACHE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Ali Mkhida</name>
+      <organization>Algorizk Labs</organization>
+      <organizationUrl>https://algorizk.xyz</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/qoosmo/cryptanalytic-time-memory-tradeoffs.git</developerConnection>
+    <url>https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs</url>
+    <tag>HEAD</tag>
+  </scm>
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>

@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: >-
+  If you use this repository, please cite the software artifact and the exact
+  commit you used. The future ePrint author list will be finalized separately
+  with the original research collaborators.
+title: "Representation and Time-Memory Tradeoffs in Symmetric Cryptography"
+type: software
+authors:
+  - family-names: "Sakho"
+    given-names: "Abdourahmane"
+  - family-names: "Mkhida"
+    given-names: "Ali"
+    orcid: "https://orcid.org/0009-0009-2101-9070"
+  - family-names: "El Yadari"
+    given-names: "Maad"
+repository-code: "https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs"
+url: "https://algorizk.xyz"
+abstract: >-
+  Research artifact on finite-field representation engineering for AES-like
+  arithmetic and reproducible cryptanalytic time-memory tradeoffs, with Java
+  and Rust reference implementations, exact coverage measurements, historical
+  reconstruction, and an evolving ePrint manuscript.
+keywords:
+  - cryptography
+  - cryptanalysis
+  - time-memory tradeoff
+  - Hellman
+  - distinguished points
+  - finite fields
+  - AES
+  - Rust
+  - Java

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security policy
+    url: https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/security/policy
+    about: Read the responsible-disclosure guidance before reporting sensitive issues.
+  - name: Algorizk Labs
+    url: https://algorizk.xyz
+    about: Research and engineering work by Algorizk Labs.

@@ -1,75 +1,66 @@
 # Representation and Time-Memory Tradeoffs in Symmetric Cryptography
 
 [![CI](https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/actions/workflows/ci.yml/badge.svg)](https://github.com/qoosmo/cryptanalytic-time-memory-tradeoffs/actions/workflows/ci.yml)
+[![Java 17](https://img.shields.io/badge/reference-Java%2017-blue.svg)](src/main/java/io/github/qoosmo/hpc)
+[![Rust](https://img.shields.io/badge/reference-Rust-orange.svg)](rust/)
+[![Research](https://img.shields.io/badge/status-active%20research-6f42c1.svg)](RESEARCH.md)
+[![ePrint](https://img.shields.io/badge/paper-ePrint%20draft-informational.svg)](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/modern%20software-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
-A reproducible research project in symmetric cryptography combining two themes:
+**An [Algorizk Labs](https://algorizk.xyz) research artifact in cryptography, reproducible systems, and implementation-level verification.**
+
+This repository develops two connected research directions in symmetric cryptography:
 
 1. **finite-field representation engineering for AES-like arithmetic** — polynomial and normal bases, tower-field isomorphisms, composite-field inversion, and non-LUT S-box structure;
-2. **cryptanalytic time-memory tradeoffs** — exhaustive search, Hellman chains, distinguished points, exact table coverage, and functional-graph coalescence over deliberately reduced DES state spaces.
+2. **cryptanalytic time-memory tradeoffs** — exhaustive search, Hellman chains, distinguished points, exact coverage, collision handling, and functional-graph coalescence over deliberately reduced DES state spaces.
 
-The project originated as an **M2P SCCI master's research project at Ensimag–UJF** by **Abdourahmane Sakho, Ali Mkhida, and Maad El Yadari**. The original research presentation and Eclipse prototype are preserved unchanged, while the modern repository adds a paper-oriented reconstruction, reproducible Java and Rust implementations, exact verification, and CI.
+The project originated as an **M2P SCCI master's research project at Ensimag–UJF** by **Abdourahmane Sakho, Ali Mkhida, and Maad El Yadari**. The original presentation and Eclipse prototype are preserved unchanged. The modern repository adds a paper-oriented mathematical reconstruction, independent Java and Rust reference implementations, deterministic experiments, cross-language fixtures, exact verification, and CI.
 
-> **Scope.** DES is obsolete and is used only as a compact reproducibility fixture. Nothing in this repository claims to break full-size DES or AES, and none of the code should be used as production cryptography.
+> **Scope.** DES is obsolete and is used here only as a compact reproducibility fixture. This repository does not claim to break full-size DES or AES and is not production cryptographic software.
 
-## Paper track
+## What this repository demonstrates
 
-The repository is being developed toward an **IACR ePrint submission**.
-
-**Working title**
-
-> **Representation and Time-Memory Tradeoffs in Symmetric Cryptography: Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments**
-
-- [ePrint-style PDF](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
-- [LaTeX source](research-note/main.tex)
-- [historical-math reconstruction map](research-note/HISTORICAL-MATH-SOURCE.md)
-- [research questions and evidence policy](RESEARCH.md)
-- [project roadmap](ROADMAP.md)
-- [authors and provenance](AUTHORS.md)
-
-The ePrint draft is an evolving research document. The authorship of a future submission will be finalized with the original project collaborators before submission.
-
-## Two PDFs, permanently separated
-
-| Artifact | Role |
-| --- | --- |
-| [`docs/original-presentation.pdf`](docs/original-presentation.pdf) | Original master's research presentation, preserved byte-for-byte with its original logos and layout |
-| [`research-note/cryptanalytic-time-memory-tradeoffs.pdf`](research-note/cryptanalytic-time-memory-tradeoffs.pdf) | Current paper-oriented reconstruction and modern experimental report |
-
-The original presentation is not rewritten or replaced.
-
-Its preserved SHA-256 is:
+A result should be traceable through:
 
 ```text
-4003194fdfe82e84bcc32876c8d9ba5042d12dc5f14da726a4bd6e3edc2e6bec
+mathematical statement
+        ↓
+reference semantics
+        ↓
+independent implementations
+        ↓
+committed evidence / experiment output
 ```
 
-## Historical mathematics reconstructed
+That evidence chain is the core of the repository and reflects the research engineering approach used at Algorizk Labs.
 
-The paper now reconstructs the recoverable mathematics from the original presentation, including:
+## Research highlights
 
-- the concrete `GF(16) = GF(2)[X]/(X^4 + X^3 + X^2 + X + 1)` model;
-- the normal basis `{α^8, α^4, α^2, α}`;
+### Historical finite-field mathematics
+
+The paper reconstructs the recoverable mathematics from the original presentation:
+
+- `GF(16) = GF(2)[X]/(X^4 + X^3 + X^2 + X + 1)`;
+- normal basis `{α^8, α^4, α^2, α}`;
 - the slide-derived `GF(16)` multiplication formula;
 - Frobenius squaring as a coordinate permutation;
 - the generator-based tower-field isomorphism construction;
-- the exact historical `8×8` binary isomorphism matrix and its inverse;
-- Hamming-weight interpretation of those binary maps as parallel XOR networks;
+- the exact historical `8×8` binary isomorphism matrix and inverse;
+- Hamming-weight interpretation of the maps as XOR networks;
 - the second `GF(16) -> GF(4)` composite-field layer;
-- the non-LUT identity `γ^{-1} = γ^2` for nonzero `γ ∈ GF(4)`.
+- `γ^{-1}=γ^2` for nonzero `γ ∈ GF(4)`.
 
-[`scripts/verify-historical-math.py`](scripts/verify-historical-math.py) independently checks the finite-field formulas and matrix identities.
+[`scripts/verify-historical-math.py`](scripts/verify-historical-math.py) independently checks the recoverable finite-field identities and matrix inverses.
 
-Slides whose derivations were written only on the board during the original research presentation are explicitly marked as unrecoverable from the preserved PDF; the paper does not invent those missing proofs.
+### Cryptanalytic state model
 
-## Cryptanalytic model
-
-For a reduced state `x`, a canonical DES key encoding `K(x)`, fixed plaintext `P`, encryption `E`, and reduction `R`, one chain transition is
+For reduced state `x`, canonical DES key `K(x)`, fixed plaintext `P`, encryption `E`, and reduction `R`:
 
 ```math
-F(x) = R(E_{K(x)}(P)).
+F(x)=R(E_{K(x)}(P)).
 ```
 
-The modern state model uses **effective DES key bits**, not raw Java key-representation bytes:
+The model uses effective DES key bits:
 
 ```math
 x \in \{0,\dots,2^b-1\}, \qquad 1 \le b \le 28.
@@ -77,53 +68,24 @@ x \in \{0,\dots,2^b-1\}, \qquad 1 \le b \le 28.
 
 The four variable DES bytes contribute seven effective bits each; odd parity is inserted canonically.
 
-## Implementations
+### Independent Java and Rust implementations
 
-### Java 17 reference
+The committed 16-bit experiments use 30 trials, Hellman `(m,t)=(1024,64)`, and distinguished points with 1024 starts, `d=6`, maximum chain length 256.
 
-The Java implementation under [`src/main/java/io/github/qoosmo/hpc`](src/main/java/io/github/qoosmo/hpc) contains:
+| Implementation | Method | Exact recovery | Median exact coverage |
+| --- | --- | ---: | ---: |
+| Java | Exhaustive | 30/30 | 100.0% |
+| Java | Hellman | 4/30 | 16.8% |
+| Java | Distinguished points | 3/30 | 15.4% |
+| Rust | Exhaustive | 30/30 | 100.0% |
+| Rust | Hellman | 4/30 | 16.8% |
+| Rust | Distinguished points | 3/30 | 15.4% |
 
-- `ReducedDesKeySpace`
-- `DesOracle`
-- `LegacyReduction`
-- `ExhaustiveSearch`
-- `HellmanTable`
-- `DistinguishedPointPredicate`
-- `DistinguishedPointTable`
-- `CoverageAnalyzer`
-- `ExperimentRunner`
-- `ExactCoverageRunner`
+The matching recovery counts and coverage are a strong cross-implementation correctness signal. The current Java and Rust timing runs use different deterministic trial generators, so **no Java-vs-Rust speedup claim is made yet**. A shared experiment plan is the next comparison gate.
 
-The Java suite remains the reference for the committed benchmark rows.
+See [`docs/VERIFIED_RESULTS.md`](docs/VERIFIED_RESULTS.md) and [`docs/RUST_VERIFIED_RESULTS.md`](docs/RUST_VERIFIED_RESULTS.md).
 
-### Rust reference — added 28 August 2026
-
-The Rust crate under [`rust/`](rust/) now implements the same core semantics:
-
-- canonical reduced DES state encoding and odd parity;
-- DES/ECB with PKCS#5-compatible padding over the same plaintext fixture;
-- the historical effective-bit reduction;
-- exhaustive search;
-- fixed-length Hellman chains;
-- bounded distinguished-point chains;
-- exact state-coverage analysis;
-- shared Java/Rust reference vectors.
-
-This first Rust implementation is a **correctness/equivalence layer**, not yet a speed claim.
-
-The Rust track now also has a deterministic experiment harness and a committed 16-bit/30-trial benchmark path. See [`docs/RUST_VERIFIED_RESULTS.md`](docs/RUST_VERIFIED_RESULTS.md) after running the verified-small script. Direct Java/Rust speedup claims remain gated on a shared experiment plan.
-
-The shared vectors in [`test-vectors/java-rust-reference.csv`](test-vectors/java-rust-reference.csv) are checked by both languages.
-
-## Verified Java benchmark
-
-The committed benchmark uses `b = 16`, `N = 65,536`, 30 deterministic seeded trials, Hellman `(m,t)=(1024,64)`, and distinguished points with 1024 starts, `d=6`, maximum chain length 256.
-
-| Method | Exact recovery | Median exact coverage | Median offline | Median online |
-| --- | ---: | ---: | ---: | ---: |
-| Exhaustive | 30/30 | 100.0% | 0.000 ms | 25.863 ms |
-| Hellman | 4/30 | 16.8% | 70.222 ms | 3.399 ms |
-| Distinguished points | 3/30 | 15.4% | 59.311 ms | 1.790 ms |
+### Functional-graph coalescence
 
 With `mt/N = 1`, the independent-sample occupancy reference is
 
@@ -131,70 +93,143 @@ With `mt/N = 1`, the independent-sample occupancy reference is
 1-e^{-mt/N} \approx 63.2\%.
 ```
 
-The measured Hellman coverage is only about 16–17% because the chains are iterates of one fixed map and therefore coalesce. The exact functional graph, not independent sampling, governs the table.
+The measured Hellman coverage is only about 16–17% in the committed configuration because the chains are iterates of one fixed map and therefore merge.
 
-See [`docs/VERIFIED_RESULTS.md`](docs/VERIFIED_RESULTS.md).
+## Paper track
+
+The repository is being developed toward an **IACR ePrint submission**.
+
+> **Working title:** *Representation and Time-Memory Tradeoffs in Symmetric Cryptography: Finite-Field Basis Transformations for AES and Reproducible Hellman Experiments*
+
+- [ePrint-style PDF](research-note/cryptanalytic-time-memory-tradeoffs.pdf)
+- [LaTeX source](research-note/main.tex)
+- [historical-math reconstruction map](research-note/HISTORICAL-MATH-SOURCE.md)
+- [research questions and evidence policy](RESEARCH.md)
+- [roadmap](ROADMAP.md)
+- [authorship and provenance](AUTHORS.md)
+- [citation metadata](CITATION.cff)
+
+The future ePrint author list will be finalized with the original project collaborators before submission.
+
+## Historical preservation
+
+| Artifact | Role |
+| --- | --- |
+| [`docs/original-presentation.pdf`](docs/original-presentation.pdf) | Original master's research presentation |
+| [`legacy/original-eclipse-prototype/`](legacy/original-eclipse-prototype/) | Original Eclipse/Java prototype |
+
+Canonical presentation SHA-256:
+
+```text
+4003194fdfe82e84bcc32876c8d9ba5042d12dc5f14da726a4bd6e3edc2e6bec
+```
+
+CI checks this hash.
 
 ## Reproduce
+
+Full local research checks:
+
+```bash
+./scripts/check-all.sh
+```
 
 Java:
 
 ```bash
-mvn test
+mvn -B -ntp verify
 ./scripts/run-verified-small.sh
 ```
 
 Rust:
 
 ```bash
-cargo test --manifest-path rust/Cargo.toml
-cargo run --manifest-path rust/Cargo.toml --bin tmto -- smoke
+cargo fmt --manifest-path rust/Cargo.toml --all -- --check
+cargo clippy --locked --manifest-path rust/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path rust/Cargo.toml
+cargo run --release --locked --manifest-path rust/Cargo.toml --bin tmto -- verified-small
 ```
 
-Historical finite-field reconstruction:
+Historical mathematics:
 
 ```bash
 python3 scripts/verify-historical-math.py
 ```
 
-## Repository layout
+## CI quality gates
+
+Every pull request is expected to pass:
+
+1. historical presentation SHA-256 integrity;
+2. historical finite-field verification;
+3. Java 17 Maven verification;
+4. Rust formatting;
+5. warning-free Rust Clippy;
+6. Rust tests;
+7. Rust release build;
+8. Java and Rust smoke experiments;
+9. diff hygiene.
+
+## Repository map
 
 ```text
 .
 ├── README.md
 ├── AUTHORS.md
+├── CITATION.cff
 ├── RESEARCH.md
 ├── ROADMAP.md
-├── research-note/
-│   ├── main.tex
-│   ├── cryptanalytic-time-memory-tradeoffs.pdf
-│   └── HISTORICAL-MATH-SOURCE.md
+├── CONTRIBUTING.md
+├── SECURITY.md
+├── CODE_OF_CONDUCT.md
+├── LICENSE-MIT
+├── LICENSE-APACHE
+├── NOTICE
+├── research-note/               # evolving ePrint manuscript
 ├── src/                         # Java 17 reference
-├── rust/                        # Rust reference implementation
+├── rust/                        # Rust reference + experiments
 ├── test-vectors/                # Java/Rust equivalence fixtures
-├── experiments/results/         # curated benchmark evidence
-├── scripts/
-├── docs/
-│   ├── original-presentation.pdf
-│   ├── METHODOLOGY.md
-│   ├── VERIFIED_RESULTS.md
-│   ├── HISTORICAL_RESULTS.md
-│   └── PROVENANCE.md
-└── legacy/
-    └── original-eclipse-prototype/
+├── experiments/results/         # committed benchmark evidence
+├── scripts/                     # reproduction / verification
+├── docs/                        # methodology, provenance, results, historical PDF
+├── legacy/                      # preserved original prototype
+└── .github/                     # CI, ownership, templates, Dependabot
 ```
 
 ## Research discipline
 
 The repository distinguishes:
 
-- **historical reconstruction** — statements directly recoverable from the original research presentation;
-- **modern verification** — identities or semantics checked by committed tests;
-- **reproduced experiments** — measurements generated by committed scripts;
-- **future work** — results that still require implementation or new experiments.
+- **historical reconstruction**;
+- **mathematical verification**;
+- **reference semantics**;
+- **measured experiments**;
+- **future work**.
 
-No benchmark or mathematical result is promoted into the paper without a reproducible source.
+A benchmark or mathematical statement is not promoted into the paper without an identifiable evidence path.
 
-## License and reuse
+## Related Algorizk research
 
-A blanket repository license is intentionally not declared yet. The historical presentation and original prototype are coauthored research artifacts, so their reuse rights should not be inferred from the later modernization. Licensing of newly written Java/Rust code can be separated from the historical material after the original collaborators are contacted.
+This repository is part of a broader open R&D portfolio at **Algorizk Labs**:
+
+- [Boolean Kernel Basis Filtration](https://github.com/qoosmo/kernel-basis-filtration) — kernel coordinates, low-degree filtration, Rust checks, and Lean formalization;
+- [Multilinear Sumcheck](https://github.com/qoosmo/multilinear-sumcheck) — reproducible Rust implementation and protocol-oriented research artifact.
+
+Algorizk Labs works at the boundary of **cryptography, mathematical algorithms, formal verification, arithmetic kernels, and hardware/software co-design**. See [algorizk.xyz](https://algorizk.xyz).
+
+## Contributing and security
+
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+
+## Citation
+
+GitHub-readable citation metadata is provided in [`CITATION.cff`](CITATION.cff).
+
+**Maintainer:** Ali Mkhida — Algorizk Labs
+**ORCID:** [0009-0009-2101-9070](https://orcid.org/0009-0009-2101-9070)
+
+## License
+
+The **modern software, tests, build scripts, CI configuration, verification utilities, and modern reproducibility code** are available under either the MIT License or Apache License 2.0, at your option. See [`LICENSE-MIT`](LICENSE-MIT), [`LICENSE-APACHE`](LICENSE-APACHE), and [`NOTICE`](NOTICE).
+
+The software licenses **do not relicense** the preserved historical presentation, preserved historical Eclipse prototype, or the evolving scholarly manuscript under `research-note/`.
