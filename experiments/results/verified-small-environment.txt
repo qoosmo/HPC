@@ -1,0 +1,13 @@
+timestamp_utc=2026-08-28T05:12:15Z
+Darwin Alis-MacBook-Pro-2.local 25.6.0 Darwin Kernel Version 25.6.0: Fri Jul 31 19:17:12 PDT 2026; root:xnu-12377.161.14~5/RELEASE_ARM64_T8103 arm64
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+openjdk version "17.0.13" 2024-10-15
+OpenJDK Runtime Environment Homebrew (build 17.0.13+0)
+OpenJDK 64-Bit Server VM Homebrew (build 17.0.13+0, mixed mode, sharing)
+Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5)
+Maven home: /opt/homebrew/Cellar/maven/3.9.16/libexec
+Java version: 26.0.2.1, vendor: Homebrew, runtime: /opt/homebrew/Cellar/openjdk/26.0.2.1/libexec/openjdk.jdk/Contents/Home
+Default locale: en_FR, platform encoding: UTF-8
+OS name: "mac os x", version: "26.6.2", arch: "aarch64", family: "mac"
