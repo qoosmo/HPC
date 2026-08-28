@@ -1,4 +1,227 @@
 \section{Random-Function Coverage Baselines}
+\label{sec:theory}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+The concrete map $F_b$ in Eq.~\eqref{eq:iteration-map} is deterministic.
+Classical TMTO analyses nevertheless model the underlying iteration function as
+a random mapping on a set of size $N$.  This section states the random-function
+baseline against which our exact DES-derived measurements are compared.
+
+\subsection{Why independent occupancy is not a Hellman prediction}
+
+If $q$ points were sampled independently and uniformly from an $N$-element
+set, the expected number of distinct observed states would be
+\[
+    N\left(1-\left(1-\frac1N\right)^q\right)
+    \approx N(1-e^{-q/N}).
+\]
+Putting $q=mt$ gives the familiar occupancy expression
+\begin{equation}
+    \rho_{\rm iid}
+      \approx
+      1-e^{-mt/N}.
+    \label{eq:iid-occupancy}
+\end{equation}
+For $mt=N$, this is $1-e^{-1}\approx0.6321$.
+
+Equation~\eqref{eq:iid-occupancy} is useful as a deliberately naive reference,
+but Hellman matrix positions are not independent samples.  Within each row,
+later entries are deterministic iterates of earlier entries; once two
+trajectories meet under a fixed function, their suffixes coincide.  Classical
+Hellman analysis and later random-mapping work explicitly account for this
+dependence~\cite{Hellman1980,FlajoletOdlyzko1990,MaHong2009}.  We therefore do
+not use Eq.~\eqref{eq:iid-occupancy} as the expected Hellman coverage.
+
+\subsection{Ma--Hong expected coverage recurrence}
+
+Ma and Hong~\cite{MaHong2009} analyze the first $t$ columns of an
+$m\times(t+1)$ Hellman matrix.  Let
+\[
+   \overline H_k
+   =
+   \{H_{i,j}:1\leq i\leq m,\ 0\leq j\leq k\}
+\]
+and let $p_k$ denote, after normalization by $N$, the expected number of states
+appearing for the first time in column $k$.  Introducing
+\[
+    s_k=\sum_{j=0}^{k-1}p_j,
+\]
+their large-$N$ approximation yields
+\begin{equation}
+    s_0=0,
+    \qquad
+    s_{k+1}
+      =
+      1-\exp\!\left(-\frac{m}{N}\right)\exp(-s_k).
+    \label{eq:ma-hong-recurrence}
+\end{equation}
+The expected coverage rate relative to the $mt$ nominal matrix positions is
+\begin{equation}
+    \operatorname{ECR}(N,m,t)
+      =
+      \frac{N}{mt}s_t.
+    \label{eq:ma-hong-ecr}
+\end{equation}
+Consequently, the predicted fraction of the \emph{whole state space} covered
+by the first $t$ columns is simply
+\begin{equation}
+    \rho_{\rm MH}(N,m,t)
+      =
+      \frac{mt}{N}\operatorname{ECR}(N,m,t)
+      =
+      s_t.
+    \label{eq:ma-hong-state-fraction}
+\end{equation}
+
+This distinction in normalization is particularly useful in our experiments.
+The artifact reports $C_H/N$, whereas much of the TMTO literature reports
+coverage relative to $mt$.
+
+\subsection{Initial configuration}
+
+For
+\[
+    N=2^{16}=65536,
+    \qquad
+    m=1024,
+    \qquad
+    t=64,
+\]
+Eq.~\eqref{eq:ma-hong-recurrence} gives
+\[
+    s_{64}\approx0.1665143030.
+\]
+Thus random-function theory predicts approximately
+\[
+    0.1665143030\,N
+      \approx
+      10912.68
+\]
+distinct represented states, or $16.6514\%$ of the state space.
+
+The committed Java and Rust experiments report median exact Hellman coverage
+near $16.8\%$.  The purpose of the larger sweep is to determine whether this
+agreement persists across state dimensions and chain shapes, not merely at one
+configuration.
+
+For contrast, Eq.~\eqref{eq:iid-occupancy} gives
+\[
+    1-e^{-1}\approx63.2121\%
+\]
+because $mt=N$.  The difference between $63.2\%$ and $16.65\%$ is therefore
+not itself a novel empirical anomaly; it is what established fixed-map
+Hellman coverage theory already leads us to expect.
+
+\subsection{The matrix-stopping parameter}
+
+Hellman's standard parameterization is often discussed under the
+\emph{matrix-stopping rule}
+\begin{equation}
+    mt^2\approx N,
+    \label{eq:matrix-stopping}
+\end{equation}
+rather than $mt\approx N$~\cite{Hellman1980,MaHong2009}.  Under the exact
+condition $mt^2=N$, Eq.~\eqref{eq:ma-hong-recurrence} becomes
+\[
+    s_{k+1}
+      =
+      1-\exp(-1/t^2)\exp(-s_k),
+\]
+and
+\[
+    \operatorname{ECR}(t)=t\,s_t.
+\]
+
+Our initial configuration instead satisfies
+\[
+    mt=N,
+    \qquad
+    mt^2=64N.
+\]
+It is therefore a useful high-overlap finite-state stress point, but it should
+not be described as a standard matrix-stopping configuration.  The experiment
+matrix includes both regimes:
+\begin{enumerate}
+  \item configurations near $mt^2=N$, to connect directly with classical
+        parameterization;
+  \item equal-$mt$ chain-shape sweeps, to isolate the effect of changing the
+        number and length of rows at fixed nominal transition budget;
+  \item the historical/repository stress configuration $m=1024,t=64$ at
+        $N=2^{16}$.
+\end{enumerate}
+
+\subsection{Finite-$N$ and model limitations}
+
+Equation~\eqref{eq:ma-hong-recurrence} is an approximation derived under a
+random-function model.  It is not an exact identity for an arbitrary fixed
+mapping.  Two sources of deviation are therefore relevant to the present
+study.
+
+First, the reduced state spaces are finite enough that the entire functional
+graph can be enumerated.  Small-$N$ corrections, self-intersections, and
+specific component structure need not equal their asymptotic expectations.
+Ma and Hong themselves discuss a special discrepancy for the $m=1$ case and
+give a separate exact expression~\cite{MaHong2009}.
+
+Second, $F_b$ is not sampled uniformly from the set of all functions
+$X_b\to X_b$: it is built from DES encryption, a fixed plaintext, a structured
+key embedding, and a deterministic reduction.  Agreement with
+Eq.~\eqref{eq:ma-hong-state-fraction} is therefore an empirical property to be
+tested, not an assumption.
+
+These observations motivate a direct random-map control.  For every state
+dimension and TMTO parameter set used in the final experiments, we will compare
+the DES-derived map with independently generated random mappings
+\[
+    F_{\rm rand}:X_b\longrightarrow X_b
+\]
+under the same start states and table parameters.
+
+\subsection{Distinguished-point baseline}
+
+For the predicate
+\[
+    D_d(x)=1
+    \Longleftrightarrow
+    x\bmod2^d=0,
+\]
+exactly $N/2^d$ states are distinguished.  If successive states behaved as
+fresh uniform samples, the first distinguished hit would have geometric
+parameter
+\[
+    p=2^{-d}.
+\]
+For an unbounded chain,
+\[
+    \Pr[\tau=k]=(1-p)^{k-1}p,
+    \qquad
+    \mathbb E[\tau]=2^d.
+\]
+With a hard transition bound $L$, the fresh-sample truncation probability is
+\begin{equation}
+    \Pr[\tau>L]
+      =
+      (1-2^{-d})^L.
+    \label{eq:dp-truncation-baseline}
+\end{equation}
+This is again a baseline rather than an exact statement for iterations of a
+fixed finite mapping.  Cycles that contain no distinguished state can make a
+row fail to terminate even when $L$ is large, and merged trajectories create
+dependence among rows.  The final experiments compare measured truncation and
+coverage with Eq.~\eqref{eq:dp-truncation-baseline} and with exact
+functional-graph structure.
+
+\subsection{What constitutes a meaningful deviation}
+
+For each configuration we compute the theory residual
+\[
+    \Delta_{\rm cov}
+      =
+      \rho_{\rm measured}-\rho_{\rm MH}.
+\]
+A single nonzero residual is not evidence of cryptographic structure:
+finite-size variability and the approximation itself must be accounted for.
+The final paper therefore reports distributions over repeated random start
+sets and, for the random-map controls, over independently sampled mappings.
+Only a deviation that is stable relative to these controls will be interpreted
+as evidence that the DES-derived map/reduction has coverage behavior not
+captured by the random-function model.

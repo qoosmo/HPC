@@ -1,4 +1,269 @@
 \section{Model and Definitions}
+\label{sec:model}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+This section fixes the finite-state model used by both implementations and by
+all exact-coverage measurements.  The definitions deliberately separate the
+cryptographic primitive from the reduction and from the TMTO table structure.
+
+\subsection{Reduced effective DES state space}
+
+For an integer
+\[
+    1\leq b\leq 28,
+\]
+let
+\[
+    X_b=\{0,1,\ldots,2^b-1\},
+    \qquad
+    N=|X_b|=2^b.
+\]
+The parameter $b$ counts \emph{effective DES key bits}; it is not a count of
+raw bits in the eight-byte DES key representation.
+
+DES stores eight bytes, with one parity bit in each byte.  The experiment
+keeps the first four bytes fixed and allows the final four bytes to carry at
+most $4\cdot 7=28$ effective data bits.  Let
+\[
+    K_b:X_b\longrightarrow\{0,1\}^{64}
+\]
+denote the canonical encoding used by the artifact.  The state is decomposed
+into four seven-bit groups, placed into the four variable DES bytes from most
+significant group to least significant group, and the least-significant bit of
+each byte is then chosen to give odd DES parity.  Unused high state bits are
+zero.  This convention makes the state-to-key map deterministic and invertible
+on its image.
+
+The fixed four-byte prefix uses seven effective one-bits in each byte.  Its
+purpose is solely to preserve the effective-data structure of the historical
+prototype; it is not a security parameter.
+
+\subsection{Encryption oracle and reduction}
+
+Let $P$ be the fixed ASCII plaintext
+\[
+  \texttt{HPC reproducibility fixture}.
+\]
+For $x\in X_b$, define the deterministic encryption oracle
+\[
+    G_b(x)=
+    \operatorname{DES}_{K_b(x)}(P),
+\]
+using DES in ECB mode with PKCS\#5 padding.  DES is obsolete and appears here
+only as a small deterministic fixture whose entire reduced state space can be
+enumerated.
+
+The reduction
+\[
+    R_b:\{0,1\}^{*}\longrightarrow X_b
+\]
+uses the final four ciphertext bytes.  From each such byte it discards the
+least-significant bit, retains the upper seven bits, concatenates the resulting
+four seven-bit words into a 28-bit integer, and finally truncates to the low
+$b$ bits.  Equivalently, if the final four ciphertext bytes are
+$c_0,c_1,c_2,c_3$, interpreted as unsigned integers, define
+\[
+    u_i=\left\lfloor c_i/2\right\rfloor\in\{0,\ldots,127\},
+\]
+\[
+    U =
+       (((u_0\cdot 2^7+u_1)\cdot 2^7+u_2)\cdot 2^7+u_3),
+\]
+and
+\[
+    R_b(c)=U\bmod 2^b.
+\]
+
+The TMTO iteration map is therefore
+\begin{equation}
+    F_b = R_b\circ G_b:X_b\longrightarrow X_b.
+    \label{eq:iteration-map}
+\end{equation}
+For fixed $b$ and $P$, this is one deterministic functional graph on $N$
+vertices.
+
+\subsection{Targets and exact recovery}
+
+A trial chooses a target state
+\[
+    x^\star\in X_b
+\]
+and publishes only
+\[
+    y^\star = G_b(x^\star).
+\]
+An algorithm reports exact recovery only when it returns a state $\hat x$ such
+that
+\[
+    G_b(\hat x)=y^\star.
+\]
+The implementation therefore verifies candidate states against the full target
+ciphertext rather than treating an endpoint collision as success.
+
+For the deliberately reduced state spaces studied here, exhaustive search is a
+reference method: test $x=0,1,\ldots,N-1$ until the target ciphertext is
+matched.  It has exact state-space coverage one and serves as a correctness
+control rather than as a practical attack on DES.
+
+\subsection{Hellman matrix and table}
+
+Choose $m$ distinct start states
+\[
+    S=(s_1,\ldots,s_m)\subset X_b.
+\]
+For a chain length $t\geq 1$, define the Hellman matrix
+\[
+    H_{i,0}=s_i,
+    \qquad
+    H_{i,j+1}=F_b(H_{i,j}),
+    \qquad
+    0\leq j<t.
+\]
+Thus row $i$ contains $t+1$ states
+\[
+    H_{i,0},H_{i,1},\ldots,H_{i,t},
+\]
+but the table represents the first $t$ positions
+\[
+    H_{i,0},\ldots,H_{i,t-1}
+\]
+and stores the pair
+\[
+    (H_{i,0},H_{i,t}).
+\]
+This convention matches the coverage definition used by Ma and
+Hong~\cite{MaHong2009} and matches the artifact's exact coverage analyzer.
+
+The implementation indexes all starts by their final endpoint.  Multiple rows
+with the same endpoint are retained rather than silently overwritten.
+
+\subsection{Exact Hellman coverage}
+
+The represented-state set of one Hellman matrix is
+\begin{equation}
+    \mathcal C_H
+    =
+    \{H_{i,j}:1\leq i\leq m,\;0\leq j<t\}.
+    \label{eq:hellman-coverage-set}
+\end{equation}
+Its exact covered-state count and state-space coverage fraction are
+\[
+    C_H=|\mathcal C_H|,
+    \qquad
+    \rho_H=\frac{C_H}{N}.
+\]
+The normalized coverage rate used in the classical literature is instead
+\[
+    \operatorname{CR}_H=\frac{C_H}{mt}.
+\]
+The two normalizations answer different questions:
+\[
+    \rho_H
+      =
+      \frac{mt}{N}\operatorname{CR}_H.
+\]
+When $mt=N$, as in the initial $b=16,m=1024,t=64$ stress configuration, these
+two numerical values happen to coincide.  They should not otherwise be
+conflated.
+
+The artifact computes $C_H$ exactly with a bit set over all $N$ reduced states;
+this analysis is performed outside the timed preprocessing and lookup paths.
+
+\subsection{Endpoint collisions and candidate verification}
+
+Let
+\[
+    e_i=H_{i,t}
+\]
+be the endpoint of row $i$.  The number of distinct stored endpoints is
+\[
+    E_H=\left|\{e_1,\ldots,e_m\}\right|.
+\]
+Endpoint multiplicity is retained because several starts may produce the same
+endpoint.
+
+During online lookup, the target ciphertext is reduced and projected forward
+to possible endpoint positions.  If a projected value hits the endpoint
+index, all previously unchecked rows stored under that endpoint are regenerated
+from their starts.  An endpoint hit that fails to reproduce $y^\star$ is a
+false candidate event.  We therefore distinguish:
+
+\begin{itemize}
+  \item \emph{projected endpoint matches}: online projections that hit a stored
+        endpoint key;
+  \item \emph{candidate rows checked}: distinct stored rows regenerated after
+        such hits;
+  \item \emph{exact recovery}: regeneration finds a state whose full
+        ciphertext equals $y^\star$.
+\end{itemize}
+
+These counters measure concrete lookup work and should not be replaced by a
+success/failure bit alone.
+
+\subsection{Distinguished-point tables}
+
+Fix a difficulty parameter
+\[
+    1\leq d\leq b
+\]
+and define
+\[
+    D_d(x)=1
+    \quad\Longleftrightarrow\quad
+    x\bmod 2^d=0.
+\]
+Thus a fraction exactly $2^{-d}$ of the state space is distinguished.  Under
+a uniform-state heuristic, a fresh state is distinguished with probability
+\[
+    p_d=2^{-d},
+\]
+so an unconstrained geometric stopping model has mean
+\[
+    1/p_d=2^d
+\]
+transitions.
+
+For a maximum chain length $L$, a distinguished-point row starts at $s_i$ and
+iterates $F_b$ until the first transition whose output is distinguished:
+\[
+    \tau_i
+      =
+      \min\{j\in\{1,\ldots,L\}:D_d(F_b^j(s_i))=1\}.
+\]
+If no such $j$ exists, the row is \emph{truncated} and is not stored.  A
+successful row stores its start and distinguished endpoint
+\[
+    (s_i,F_b^{\tau_i}(s_i)).
+\]
+
+The exact DP coverage used by the artifact is
+\[
+    \mathcal C_{\rm DP}
+      =
+      \bigcup_{\tau_i\ {\rm exists}}
+      \{F_b^j(s_i):0\leq j<\tau_i\}.
+\]
+In particular, truncated rows are excluded from this represented-state set.
+This convention is made explicit because other implementations may count
+partially generated truncated rows differently.
+
+\subsection{Measured quantities}
+
+For each parameter configuration and trial, the study records as available:
+\[
+\begin{array}{ll}
+\text{state-space size} & N,\\
+\text{exact coverage} & C/N,\\
+\text{exact recovery} & \mathbf 1[\hat x\ {\rm recovered}],\\
+\text{stored rows} & \text{number of accepted table rows},\\
+\text{distinct endpoints} & E,\\
+\text{truncated DP rows} & T_{\rm trunc},\\
+\text{endpoint/projection hits} & Q_{\rm end},\\
+\text{candidate rows regenerated} & Q_{\rm cand},\\
+\text{offline time} & T_{\rm off},\\
+\text{online time} & T_{\rm on}.
+\end{array}
+\]
+Later parameter sweeps additionally record functional-graph statistics such as
+row merges, self-intersections, and cycle/component information.  Those
+quantities are reported only after the corresponding instrumentation is
+committed.
