@@ -12,10 +12,13 @@
 - [x] Create an ePrint-style LaTeX paper draft.
 - [x] Add the first Rust reference implementation.
 - [x] Add shared Java/Rust reference vectors.
+- [x] Add a deterministic Rust experiment harness with exact coverage output.
+- [x] Commit a first measured Rust 16-bit/30-trial benchmark with environment metadata.
 
 ## Immediate
 
-- [ ] Get the Rust CI green on the canonical GitHub branch.
+- [x] Get the Rust reference implementation CI green on the canonical GitHub branch.
+- [ ] Get the new Rust experiment harness CI green on its PR.
 - [ ] Extend cross-language vectors to table lookup, collision, truncation, and coverage cases.
 - [ ] Implement the historical `GF(16)` and tower-field arithmetic as executable Rust modules.
 - [ ] Implement the AES non-LUT S-box path and compare against the standard S-box.

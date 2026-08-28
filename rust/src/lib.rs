@@ -8,6 +8,8 @@ use des::Des;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 
+pub mod experiment;
+
 pub const MAX_STATE_BITS: u8 = 28;
 pub const DEFAULT_PLAINTEXT: &[u8] = b"HPC reproducibility fixture";
 

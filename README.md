@@ -111,6 +111,8 @@ The Rust crate under [`rust/`](rust/) now implements the same core semantics:
 
 This first Rust implementation is a **correctness/equivalence layer**, not yet a speed claim.
 
+The Rust track now also has a deterministic experiment harness and a committed 16-bit/30-trial benchmark path. See [`docs/RUST_VERIFIED_RESULTS.md`](docs/RUST_VERIFIED_RESULTS.md) after running the verified-small script. Direct Java/Rust speedup claims remain gated on a shared experiment plan.
+
 The shared vectors in [`test-vectors/java-rust-reference.csv`](test-vectors/java-rust-reference.csv) are checked by both languages.
 
 ## Verified Java benchmark
