@@ -1,0 +1,6 @@
+rows=840
+configurations=14
+trials_per_map=30
+stress_ma_hong=0.166514303028
+stress_des_median=0.168395996093
+stress_random_median=0.168098449707

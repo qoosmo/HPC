@@ -1,4 +1,164 @@
 \section{Experimental Methodology}
+\label{sec:experiments}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+The experiments are designed to separate three questions that are easy to
+conflate: whether the implementations agree, whether the concrete DES-derived
+mapping follows random-function TMTO theory, and how wall-clock performance
+depends on implementation language.  The first question is resolved before the
+second is measured, and both are resolved before the third is interpreted.
+
+\subsection{Semantic-equivalence gate}
+
+Section~\ref{sec:implementation} describes the committed 30-trial literal
+workload consumed by Java and Rust.  The resulting deterministic CSV files are
+required to be byte-for-byte identical.  Timing fields are deliberately absent
+from this gate.  Thus any later performance comparison starts from identical
+targets, starts, table parameters, ciphertexts, coverage, endpoint counts, and
+recovery decisions.
+
+\subsection{Exact-map experiment rather than a timing benchmark}
+
+The coverage experiment is not timed cryptographic benchmarking.  For each
+\[
+  b\in\{12,14,16,18\},
+\]
+the Rust experiment harness first enumerates the entire concrete mapping
+\[
+  F_b:X_b\to X_b
+\]
+once and stores its next-state array.  Every later table traversal for that
+state dimension is then performed over this exact array.  This has two
+advantages: coverage experiments do not repeatedly pay DES implementation
+cost, and the resulting measurements depend only on the finite functional
+graph and the selected starts.
+
+The complete mapping is feasible to enumerate at these dimensions: the largest
+space used in this paper has only
+\[
+  2^{18}=262144
+\]
+vertices.
+
+\subsection{Random-mapping control}
+
+For every state dimension and trial we also generate one independent
+pseudo-random control mapping
+\[
+  F_{\rm rand}:X_b\to X_b
+\]
+by assigning every vertex an independent SplitMix64-generated output reduced
+modulo $N$.  SplitMix64 is used only as a deterministic experiment generator;
+no cryptographic pseudorandomness claim is required.
+
+Within a fixed trial and parameter configuration, the DES-derived mapping and
+the random control receive exactly the same sorted set of start states.
+Consequently,
+\[
+  \Delta_{\rm map}
+    =
+    \rho_{\rm DES}-\rho_{\rm rand}
+\]
+does not contain start-set variation for that trial.
+
+The random mapping changes across trials.  The DES-derived $F_b$ is fixed for a
+given $b$, while its selected start set changes.  This distinction is
+intentional: the random controls estimate the variability across random
+functions, whereas the DES measurements characterize repeated table
+constructions on one concrete cryptographic functional graph.
+
+\subsection{Hellman parameter families}
+
+We use two complementary parameter families.  The first consists of
+matrix-stopping configurations satisfying
+\[
+    mt^2=N.
+\]
+The second holds the nominal represented-position budget fixed at
+\[
+    mt=N
+\]
+for $b=16$ while varying the chain shape.  The original repository stress
+configuration
+\[
+    (m,t)=(1024,64)
+\]
+is included in this second family.
+
+The theory-only configurations and their Ma--Hong predictions are generated
+from committed code before measurements are run.  The resulting grid is:
+
+\begin{table}[ht]
+\centering
+\small
+\input{generated/theory-grid.tex}
+\caption{Hellman parameter configurations.  The last column is the
+Ma--Hong random-function prediction for the fraction of the whole state space
+covered by the first $t$ columns.}
+\label{tab:theory-grid}
+\end{table}
+
+\subsection{Repeated trials and deterministic seeds}
+
+Each configuration is evaluated for 30 trials on the DES-derived mapping and
+30 matched random-function controls.  Start sets are distinct within a table
+and are generated deterministically from a documented base seed, state
+dimension, trial index, and configuration index.  The seed derivation is part
+of the committed experiment source.  Re-running the same commit therefore
+reconstructs the same workloads and random maps.
+
+The shared Java/Rust equivalence plan is independent of this sweep generator.
+Its literal CSV files remain the canonical evidence for cross-language
+semantic equality.
+
+\subsection{Primary Hellman observables}
+
+For each table we record:
+\[
+\begin{aligned}
+ C_H & = \text{number of distinct represented states},\\
+ \rho_H & = C_H/N,\\
+ E_H & = \text{number of distinct endpoints},\\
+ D_H & = mt-C_H.
+\end{aligned}
+\]
+The quantity $D_H$ is a compact count of repeated nominal matrix positions; it
+does not distinguish self-intersections from merges between different rows.
+
+For every configuration we also record the theory residual
+\[
+  \Delta_{\rm MH}
+    =
+    \rho_H-\rho_{\rm MH}(N,m,t),
+\]
+where $\rho_{\rm MH}$ is computed from
+Eq.~\eqref{eq:ma-hong-state-fraction}.  The independent occupancy quantity
+\[
+  \rho_{\rm iid}=1-e^{-mt/N}
+\]
+is retained only as a reference column, not as the Hellman null model.
+
+\subsection{Interpretation rule}
+
+A close match between one DES-derived table and the Ma--Hong recurrence is not
+by itself evidence that the concrete mapping behaves randomly.  The paper
+therefore compares distributions across start sets with distributions across
+independently generated random maps.  We interpret a DES-vs-theory residual as
+structurally interesting only if it is stable relative to the random-map
+control distribution.
+
+Similarly, changing $t$ at fixed $mt$ simultaneously changes row count, chain
+length, endpoint structure, and the amount of permanent coalescence.  Results
+from that family are interpreted as chain-shape effects rather than as
+differences in nominal precomputation budget.
+
+\subsection{Distinguished-point experiments}
+
+The committed shared plan already measures exact DP coverage, stored/truncated
+rows, endpoint multiplicities, recovery, and projection work for
+\[
+  d=6,\qquad L=256.
+\]
+The final DP sweep varies $d$ and $L$ and compares the measured truncation rate
+with Eq.~\eqref{eq:dp-truncation-baseline}.  Those measurements are kept in a
+separate output table so that the Hellman random-map comparison can be audited
+independently.
