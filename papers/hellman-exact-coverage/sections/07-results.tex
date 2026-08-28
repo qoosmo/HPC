@@ -1,4 +1,112 @@
-\section{Results}
+\input{generated/result-macros.tex}
 
-% Built as a separate paper part. Do not fill with unsupported claims.
-% This section is intentionally staged for the next paper-building pass.
+\section{Results}
+\label{sec:results}
+
+\subsection{Cross-language semantic equivalence}
+
+Java and Rust consumed the same literal 30-trial workload containing 30
+targets, 30,720 Hellman starts, and 30,720 distinguished-point starts. The
+complete deterministic CSV outputs were byte-for-byte identical, including
+target ciphertexts, exact coverage, endpoint counts, recovery decisions, and
+lookup counters.
+
+On that workload, Hellman recovered \SharedHellmanSuccess{} targets and had
+median exact coverage \SharedHellmanCoverage{}. The distinguished-point table
+recovered \SharedDPSuccess{} targets and had median exact coverage
+\SharedDPCoverage{}. These are correctness results; no cross-language timing
+claim is inferred.
+
+\subsection{Hellman coverage tracks the random-map control}
+
+Table~\ref{tab:hellman-main-results} reports the $b=16$ configurations. Across
+both the matrix-stopping family and the equal-$mt$ family, the DES-derived map
+tracks the matched random-map control closely.
+
+\begin{table}[ht]
+\centering
+\small
+\input{generated/hellman-main-results.tex}
+\caption{Measured median exact Hellman coverage over 30 trials for the
+DES-derived mapping and matched random mappings. Ma--Hong is the
+random-function prediction from Eq.~\eqref{eq:ma-hong-state-fraction}.}
+\label{tab:hellman-main-results}
+\end{table}
+
+At the original stress point
+\[
+  N=65536,\qquad m=1024,\qquad t=64,
+\]
+the Ma--Hong prediction is \StressMH{}, while the measured medians are
+\StressDES{} for the DES-derived map and \StressRandom{} for the random-map
+controls. The mean paired DES-minus-random difference is
+\StressPairedMeanPP{} percentage points. A deterministic nonparametric
+bootstrap over the 30 paired trials gives a descriptive 95\% interval of
+[\StressPairedCILowPP{},\StressPairedCIHighPP{}] percentage points.
+
+Both the concrete map and random controls exhibit the large loss relative to
+independent occupancy, while both remain close to the established fixed-map
+Hellman baseline.
+
+\subsection{Finite-size residuals are shared by random controls}
+
+The Ma--Hong recurrence is asymptotic, so small residuals are expected at
+finite $N$. In the sweep, residuals of similar scale also appear in the
+random-map controls. The configuration with the largest absolute paired mean
+DES-minus-random difference is \LargestDeltaConfig{}, at
+\LargestPairedMeanPP{} percentage points.
+
+Within the tested dimensions and parameters, this provides no evidence that
+the DES-derived mapping has coverage behavior qualitatively different from the
+finite random mappings.
+
+\subsection{Chain shape matters at fixed nominal budget}
+
+The equal-budget $b=16$ family fixes $mt=N$ while varying $t$.
+Table~\ref{tab:hellman-main-results} shows that coverage is not determined by
+$mt$ alone. Shorter rows and more starts cover a larger fraction of the state
+space; longer rows undergo more permanent coalescence under the fixed map.
+Both DES and random-map measurements follow the trend predicted by the
+Ma--Hong recurrence.
+
+\subsection{Distinguished-point truncation}
+
+The distinguished-point sweep fixes $b=16$ and $m=1024$, varies
+$d\in\{4,6,8\}$, and uses hard bounds equal to one, two, or four times the
+fresh-sample mean $2^d$.
+
+\begin{table}[ht]
+\centering
+\small
+\input{generated/dp-main-results.tex}
+\caption{Distinguished-point results over 30 trials. ``Fresh trunc.'' is
+$(1-2^{-d})^L$; DES and random truncation columns are measured medians.
+Coverage is the exact fraction represented by stored DES-derived rows, with
+truncated rows excluded according to Section~\ref{sec:model}.}
+\label{tab:dp-main-results}
+\end{table}
+
+For $d=6$ and $L=256$, the fresh-sample truncation reference is
+\DPDsixTheoryTrunc{}. The measured median truncation rates are
+\DPDsixDESTrunc{} for the DES-derived map and \DPDsixRandomTrunc{} for the
+random-map controls, while median exact DES coverage is
+\DPDsixDESCoverage{}.
+
+The geometric expression is only a fresh-sample reference. Fixed finite
+mappings can merge trajectories or enter cycles without a distinguished
+vertex, so the matched random-map controls provide the more relevant
+finite-functional-graph comparison.
+
+\subsection{What the experiments establish}
+
+Within the reduced state spaces tested here, the evidence supports three
+specific claims. First, Java and Rust agree on the full deterministic semantics
+of the committed shared workload. Second, exact Hellman coverage of the
+DES-derived mappings is close to both the Ma--Hong random-function prediction
+and matched finite random-map controls. Third, distinguished-point truncation
+and coverage can be measured exactly and compared with both fresh-sample and
+finite-map references.
+
+These claims are deliberately narrower than saying that DES itself is a random
+function. The tested object is the reduced mapping $F_b$ induced by the chosen
+key embedding, fixed plaintext, DES primitive, and reduction.

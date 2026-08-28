@@ -1,0 +1,10 @@
+stress_ma_hong=0.166514303028
+stress_des_median=0.168395996093
+stress_random_median=0.168098449707
+stress_paired_mean_delta=0.000866699219
+stress_paired_mean_ci95=[-0.000706494649,0.002439397176]
+largest_abs_paired_mean_config=budget-b16-t128
+largest_abs_paired_mean_delta=0.002175903320
+dp_d6_l256_theory_trunc=0.017746279621
+dp_d6_l256_des_median_trunc=0.002929687500
+dp_d6_l256_random_median_trunc=0.051757812500

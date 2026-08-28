@@ -153,12 +153,32 @@ differences in nominal precomputation budget.
 
 \subsection{Distinguished-point experiments}
 
-The committed shared plan already measures exact DP coverage, stored/truncated
-rows, endpoint multiplicities, recovery, and projection work for
+The distinguished-point sweep fixes
 \[
-  d=6,\qquad L=256.
+  b=16,\qquad N=65536,\qquad m=1024
 \]
-The final DP sweep varies $d$ and $L$ and compares the measured truncation rate
-with Eq.~\eqref{eq:dp-truncation-baseline}.  Those measurements are kept in a
-separate output table so that the Hellman random-map comparison can be audited
-independently.
+and varies
+\[
+  d\in\{4,6,8\}.
+\]
+For each $d$, the nominal fresh-sample mean stopping time is $2^d$.  We use
+three hard bounds,
+\[
+  L\in\{2^d,2^{d+1},2^{d+2}\},
+\]
+so that $L/\mathbb E[\tau]\in\{1,2,4\}$ under the geometric baseline.
+
+Each of the nine $(d,L)$ configurations is evaluated for 30 trials on the
+fixed DES-derived mapping and on matched independently generated random
+mappings.  Within a trial, all nine configurations and both map types use the
+same set of 1024 distinct starts.  We record exact coverage of stored rows,
+stored and truncated row counts, truncation fraction, distinct distinguished
+endpoints, and mean transition count among stored rows.
+
+The fresh-sample truncation reference
+\[
+  (1-2^{-d})^L
+\]
+is reported beside both map types.  Because fixed functional graphs can enter
+cycles containing no distinguished state, it is treated as a reference rather
+than as an exact finite-map prediction.
