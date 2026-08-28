@@ -1,0 +1,9 @@
+[package]
+name = "cryptanalytic-time-memory-tradeoffs"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Rust reference implementation for reduced-DES cryptanalytic time-memory tradeoff experiments"
+
+[dependencies]
+des = "0.8.1"
